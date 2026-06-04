@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reçu Colis #{{ colis.id }}</title>
+    <style>
+        @page {
+            size: A6;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .recu {
+            border: 1px solid #333;
+            padding: 15px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .subtitle {
+            font-size: 12px;
+        }
+        .section {
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 11px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .signature {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #333;
+            text-align: center;
+            font-size: 10px;
+        }
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="recu">
+        <div class="header">
+            <div class="title">REÇU DE DÉPÔT / RETRAIT</div>
+            <div class="subtitle">Colis n°{{ colis.id }}</div>
+        </div>
+        
+        <div class="section">
+            <div class="row">
+                <span class="label">Date de création:</span>
+                <span>{{ colis.date_creation[:19].replace('T', ' ') if colis.date_creation else '-' }}</span>
+            </div>
+            {% if colis.date_validation %}
+            <div class="row">
+                <span class="label">Date de validation:</span>
+                <span>{{ colis.date_validation[:19].replace('T', ' ') if colis.date_validation else '-' }}</span>
+            </div>
+            {% endif %}
+            {% if colis.date_expedition %}
+            <div class="row">
+                <span class="label">Date d'expédition:</span>
+                <span>{{ colis.date_expedition[:19].replace('T', ' ') if colis.date_expedition else '-' }}</span>
+            </div>
+            {% endif %}
+            {% if colis.date_reception %}
+            <div class="row">
+                <span class="label">Date d'arrivée:</span>
+                <span>{{ colis.date_reception[:19].replace('T', ' ') if colis.date_reception else '-' }}</span>
+            </div>
+            {% endif %}
+            {% if colis.date_recuperation %}
+            <div class="row">
+                <span class="label">Date de récupération:</span>
+                <span>{{ colis.date_recuperation[:19].replace('T', ' ') if colis.date_recuperation else '-' }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if colis.deposant_nom %}
+        <div class="section">
+            <div class="row"><span class="label">DÉPOSANT:</span></div>
+            <div class="row"><span class="label">Nom:</span><span>{{ colis.deposant_nom }}</span></div>
+            <div class="row"><span class="label">Tél:</span><span>{{ colis.deposant_telephone }}</span></div>
+        </div>
+        {% endif %}
+        
+        {% if colis.livreur_nom %}
+        <div class="section">
+            <div class="row"><span class="label">TRANSPORTEUR:</span></div>
+            <div class="row"><span class="label">Nom:</span><span>{{ colis.livreur_nom }}</span></div>
+            <div class="row"><span class="label">Tél:</span><span>{{ colis.livreur_telephone }}</span></div>
+        </div>
+        {% endif %}
+        
+        {% if colis.recuperateur_nom %}
+        <div class="section">
+            <div class="row"><span class="label">RÉCUPÉRÉ PAR:</span></div>
+            <div class="row"><span class="label">Nom:</span><span>{{ colis.recuperateur_nom }}</span></div>
+            <div class="row"><span class="label">Tél:</span><span>{{ colis.recuperateur_telephone }}</span></div>
+        </div>
+        {% endif %}
+        
+        <div class="section">
+            <div class="row"><span class="label">DESTINATAIRE:</span></div>
+            <div class="row"><span class="label">Nom:</span><span>{{ colis.destinataire_nom or '-' }}</span></div>
+            <div class="row"><span class="label">Tél:</span><span>{{ colis.destinataire_telephone or '-' }}</span></div>
+        </div>
+        
+        <div class="section">
+            <div class="row"><span class="label">Type de colis:</span><span>{{ colis.type_colis or '-' }}{{ ' (' + colis.type_colis_autre + ')' if colis.type_colis_autre }}</span></div>
+            {% if colis.nombre_colis and colis.nombre_colis > 1 %}
+            <div class="row"><span class="label">Nombre:</span><span>{{ colis.nombre_colis }}</span></div>
+            {% endif %}
+            {% if colis.poids %}
+            <div class="row"><span class="label">Poids:</span><span>{{ colis.poids }} kg</span></div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <div class="row"><span class="label">MONTANT:</span><span>{{ colis.prix_final or colis.montant_paye or 0 }} €</span></div>
+            <div class="row"><span class="label">Payement:</span><span>{{ colis.moyen_payement or '-' }}</span></div>
+        </div>
+        
+        <div class="section">
+            <div class="row"><span class="label">STATUT:</span><span>{{ colis.statut }}</span></div>
+        </div>
+        
+        {% if colis.notes %}
+        <div class="section">
+            <div class="row"><span class="label">Notes:</span></div>
+            <div class="row"><span>{{ colis.notes }}</span></div>
+        </div>
+        {% endif %}
+        
+        <div class="signature">
+            Signature du client:<br>
+            _________________________
+        </div>
+        
+        <div class="footer">
+            Merci pour votre confiance
+        </div>
+    </div>
+</body>
+</html>

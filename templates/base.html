@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ColisExpress - Gestion France ↔ Côte d'Ivoire</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <a href="/" class="logo">
+                📦 Colis<span>Express</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Accueil</a>
+                <a href="/add">Nouveau colis</a>
+                {% if session.logged_in %}
+                <a href="/list">Liste</a>
+                <a href="/logout">Déconnexion</a>
+                {% else %}
+                <a href="/login">Admin</a>
+                {% endif %}
+                <a href="/suivi">Suivi</a>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>🔍 SUIVI DES COLIS</h2>
+    </div>
+    <div class="card-body">
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Rechercher par téléphone du destinataire ou nom du déposant..." autocomplete="off">
+            <button class="btn btn-primary" onclick="rechercher()">🔍 RECHERCHER</button>
+        </div>
+        
+        <div id="results"></div>
+        
+    </div>
+</div>
+
+<script>
+    async function rechercher() {
+        const terme = document.getElementById('searchInput').value;
+        
+        if (terme.length < 2) {
+            document.getElementById('results').innerHTML = '<div class="alert" style="background:#f0f2f2;">🔍 Veuillez entrer au moins 2 caractères</div>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/recherche?q=${encodeURIComponent(terme)}`);
+            const colis = await response.json();
+            
+            const resultsDiv = document.getElementById('results');
+            
+            if (colis.length === 0) {
+                resultsDiv.innerHTML = '<div class="alert alert-error">❌ Aucun colis trouvé</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = colis.map(c => {
+                // Déterminer l'expéditeur
+                let expediteur = '';
+                if (c.deposant_nom) {
+                    expediteur = `👤 Déposant: ${c.deposant_nom} (${c.deposant_telephone || '-'})`;
+                } else if (c.livreur_nom) {
+                    expediteur = `🚚 Transporteur: ${c.livreur_nom} (${c.livreur_telephone || '-'})`;
+                } else if (c.recuperateur_nom) {
+                    expediteur = `📥 Récupéré par: ${c.recuperateur_nom} (${c.recuperateur_telephone || '-'})`;
+                } else {
+                    expediteur = '-';
+                }
+                
+                // Afficher le type de colis
+                let typeColis = c.type_colis || '-';
+                if (c.type_colis_autre) {
+                    typeColis += ` (${c.type_colis_autre})`;
+                }
+                
+                // Afficher les dates importantes
+                let dates = '';
+                if (c.date_validation) {
+                    dates += `<div class="result-detail-item"><span class="result-detail-label">✅ Validé:</span><span>${new Date(c.date_validation).toLocaleDateString('fr-FR')} ${new Date(c.date_validation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
+                }
+                if (c.date_expedition) {
+                    dates += `<div class="result-detail-item"><span class="result-detail-label">✈️ Expédié:</span><span>${new Date(c.date_expedition).toLocaleDateString('fr-FR')} ${new Date(c.date_expedition).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
+                }
+                if (c.date_reception) {
+                    dates += `<div class="result-detail-item"><span class="result-detail-label">📍 Arrivé:</span><span>${new Date(c.date_reception).toLocaleDateString('fr-FR')} ${new Date(c.date_reception).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
+                }
+                if (c.date_recuperation) {
+                    dates += `<div class="result-detail-item"><span class="result-detail-label">🏠 Récupéré:</span><span>${new Date(c.date_recuperation).toLocaleDateString('fr-FR')} ${new Date(c.date_recuperation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
+                }
+                
+                return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-id">📦 COLIS #${c.id}</span>
+                        <span class="status-badge status-${c.statut.replace(/ /g, '-')}">${c.statut}</span>
+                    </div>
+                    <div class="result-details">
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">📅 Créé le:</span>
+                            <span>${new Date(c.date_creation).toLocaleDateString('fr-FR')} ${new Date(c.date_creation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">👤 Expéditeur:</span>
+                            <span>${expediteur}</span>
+                        </div>
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">🎯 Destinataire:</span>
+                            <span>${c.destinataire_nom || '-'} (${c.destinataire_telephone || '-'})</span>
+                        </div>
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">📦 Type:</span>
+                            <span>${typeColis}</span>
+                        </div>
+                        ${c.nombre_colis && c.nombre_colis > 1 ? `<div class="result-detail-item">
+                            <span class="result-detail-label">🔢 Nombre:</span>
+                            <span>${c.nombre_colis}</span>
+                        </div>` : ''}
+                        ${c.poids ? `<div class="result-detail-item">
+                            <span class="result-detail-label">⚖️ Poids:</span>
+                            <span>${c.poids} kg (arrondi: ${c.poids_arrondi || '-'} kg)</span>
+                        </div>` : ''}
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">💰 Montant:</span>
+                            <span><strong>${c.prix_final || c.montant_paye || 0} €</strong> ${c.est_negocie ? '(négocié)' : ''}</span>
+                        </div>
+                        <div class="result-detail-item">
+                            <span class="result-detail-label">💳 Payement:</span>
+                            <span>${c.moyen_payement || '-'} ${c.payement_chez ? `(${c.payement_chez})` : ''}</span>
+                        </div>
+                        ${dates ? `<div class="result-detail-item" style="grid-column: 1/-1;">
+                            <span class="result-detail-label">📅 Suivi:</span>
+                            <div style="flex:1;">${dates}</div>
+                        </div>` : ''}
+                        ${c.notes ? `<div class="result-detail-item" style="grid-column: 1/-1;">
+                            <span class="result-detail-label">📝 Notes:</span>
+                            <span>${c.notes}</span>
+                        </div>` : ''}
+                    </div>
+                    <div style="margin-top: 15px; text-align: right; border-top: 1px solid #eee; padding-top: 12px;">
+                        <button class="btn btn-primary" onclick="imprimerRecu(${c.id})" style="padding: 8px 20px;">
+                            🖨️ IMPRIMER LE REÇU
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+            document.getElementById('results').innerHTML = '<div class="alert alert-error">❌ Erreur lors de la recherche</div>';
+        }
+    }
+    
+    function imprimerRecu(id) {
+        // Ouvrir la page du reçu dans un nouvel onglet
+        window.open(`/recu/${id}`, '_blank');
+    }
+    
+    // Recherche avec la touche Entrée
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            rechercher();
+        }
+    });
+</script>
+{% endblock %}

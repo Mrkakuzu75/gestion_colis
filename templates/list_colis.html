@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>📋 Liste des colis</h2>
+    </div>
+    
+    <div class="filters-bar">
+        <div class="filter-item">
+            <label>Filtrer par statut</label>
+            <select id="filterStatut">
+                <option value="all">Tous</option>
+                <option value="En attente">⏳ En attente</option>
+                <option value="Validé">✅ Validé</option>
+                <option value="Parti">✈️ Parti</option>
+                <option value="Arrivé">📍 Arrivé</option>
+                <option value="Récupéré">🏠 Récupéré</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="chargerListe()">🔄 Actualiser</button>
+        <button class="btn btn-success" onclick="exportToExcel()">📊 Exporter Excel</button>
+    </div>
+    
+    <div class="table-wrapper">
+        <table class="colis-table">
+            <thead>
+                <tr><th>ID</th><th>Déposant</th><th>Destinataire</th><th>Type</th><th>Nb</th><th>Poids</th><th>Prix (€)</th><th>Payement</th><th>Statut</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="10" class="text-center">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let colisData = [];
+    
+    async function chargerListe() {
+        const response = await fetch('/api/colis');
+        colisData = await response.json();
+        const filter = document.getElementById('filterStatut').value;
+        const filtered = filter === 'all' ? colisData : colisData.filter(c => c.statut === filter);
+        
+        const tbody = document.getElementById('tableBody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">Aucun colis trouvé</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = filtered.map(c => `
+            <tr>
+                <td><strong>#${c.id}</strong></td>
+                <td>${c.deposant_nom}<br><small>${c.deposant_telephone}</small></td>
+                <td>${c.destinataire_nom}<br><small>${c.destinataire_telephone}</small></td>
+                <td>${c.type_colis}</td>
+                <td>${c.nombre_colis || 1}</td>
+                <td>${c.poids ? c.poids + ' kg' : '-'}</td>
+                <td><strong>${c.prix_final} €</strong></td>
+                <td><small>${c.moyen_payement}${c.payement_chez ? '<br>('+c.payement_chez+')' : ''}</small></td>
+                <td><span class="status-badge status-${c.statut.replace(/ /g, '-')}">${c.statut}</span></td>
+                <td>
+                    <button class="btn btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="changerStatut(${c.id}, '${c.statut}')">📊 Changer</button>
+                    <button class="btn btn-danger" style="padding:5px 10px; font-size:12px; margin-top:5px;" onclick="supprimerColis(${c.id})">🗑️ Supprimer</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    async function changerStatut(id, statutActuel) {
+        const response = await fetch(`/api/statuts-possibles/${statutActuel}`);
+        const statutsPossibles = await response.json();
+        
+        if (statutsPossibles.length === 0) {
+            alert('Ce colis est déjà au statut final');
+            return;
+        }
+        
+        const nouveauStatut = prompt(`Changer statut du colis #${id}\nStatut actuel: ${statutActuel}\n\nChoisir: ${statutsPossibles.join(' / ')}`, statutsPossibles[0]);
+        
+        if (nouveauStatut && statutsPossibles.includes(nouveauStatut)) {
+            const updateResponse = await fetch(`/api/colis/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({statut: nouveauStatut})
+            });
+            const result = await updateResponse.json();
+            if (result.success) {
+                chargerListe();
+            }
+        }
+    }
+    
+    async function supprimerColis(id) {
+        if (!confirm('Supprimer définitivement ce colis ?')) return;
+        const response = await fetch(`/api/colis/${id}`, {method: 'DELETE'});
+        const result = await response.json();
+        if (result.success) chargerListe();
+    }
+    
+    document.getElementById('filterStatut').addEventListener('change', chargerListe);
+    chargerListe();
+</script>
+{% endblock %}
