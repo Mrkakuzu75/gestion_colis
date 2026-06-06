@@ -9,7 +9,7 @@
     <div class="card-body">
         
         <form id="colisForm">
-            <!-- TYPE D'EXPÉDITION - Version moderne -->
+            <!-- TYPE D'EXPÉDITION -->
             <div style="margin-bottom: 28px;">
                 <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 10px; display: block;">Type d'expédition</label>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -30,7 +30,7 @@
                 </div>
             </div>
             
-            <!-- SECTION RÉCEPTION (colis qui ARRIVE en Côte d'Ivoire) -->
+            <!-- SECTION RÉCEPTION -->
             <div id="sectionArrivant" style="display: none;">
                 <div style="background: #fef9f1; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #ffe4c4;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -87,9 +87,8 @@
                 </div>
             </div>
             
-            <!-- SECTION ENVOI (colis qui PART de Côte d'Ivoire) -->
+            <!-- SECTION ENVOI -->
             <div id="sectionPartant">
-                <!-- Option Transporteur -->
                 <div style="background: #f0f9ff; border-radius: 20px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #dbeafe;">
                     <label class="checkbox-wrapper" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
                         <input type="checkbox" name="est_livreur" id="estLivreur" style="width: 18px; height: 18px;">
@@ -97,7 +96,7 @@
                     </label>
                 </div>
                 
-                <!-- MODE TRANSPORTEUR (LIVRAISON) -->
+                <!-- MODE TRANSPORTEUR -->
                 <div id="modeLivreur" style="display: none;">
                     <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -107,15 +106,15 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>🎯 Destinataire (France)</label>
-                                <input type="text" name="destinataire_nom_livreur" id="destinataireNomLivreur" placeholder="Nom complet">
+                                <input type="text" name="destinataire_nom" id="destinataireNomLivreur" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
                                 <label>📞 Téléphone destinataire</label>
-                                <input type="tel" name="destinataire_telephone_livreur" id="destinataireTelLivreur" placeholder="Téléphone">
+                                <input type="tel" name="destinataire_telephone" id="destinataireTelLivreur" placeholder="Téléphone">
                             </div>
                             <div class="form-group">
                                 <label>📦 Type de colis</label>
-                                <select name="type_colis_livreur" id="typeColisLivreur">
+                                <select name="type_colis" id="typeColisLivreur">
                                     <option value="Vêtements">👕 Vêtements</option>
                                     <option value="Électronique">📱 Électronique</option>
                                     <option value="Nourriture">🍲 Nourriture</option>
@@ -127,15 +126,15 @@
                             </div>
                             <div class="form-group" id="autreColisLivreur" style="display: none;">
                                 <label>✏️ Précisez</label>
-                                <input type="text" name="type_colis_autre_livreur" placeholder="Ex: Chaussures...">
+                                <input type="text" name="type_colis_autre" placeholder="Ex: Chaussures...">
                             </div>
                             <div class="form-group">
                                 <label>💰 Prix (€)</label>
-                                <input type="number" name="prix_negocie_livreur" id="prixNegocieLivreur" step="0.01" placeholder="0.00">
+                                <input type="number" name="prix_negocie" id="prixNegocieLivreur" step="0.01" placeholder="0.00">
                             </div>
                             <div class="form-group">
                                 <label>💳 Moyen de paiement</label>
-                                <select name="moyen_payement_livreur" id="moyenPayementLivreur">
+                                <select name="moyen_payement" id="moyenPayementLivreur">
                                     <option value="Espèces">💵 Espèces (Côte d'Ivoire)</option>
                                     <option value="Wave">📱 Wave (Côte d'Ivoire)</option>
                                     <option value="Orange Money">🟠 Orange Money (Côte d'Ivoire)</option>
@@ -145,14 +144,12 @@
                             </div>
                             <div class="form-group" id="payementChezLivreur" style="display: none;">
                                 <label>🏠 Payé chez</label>
-                                <select name="payement_chez_livreur">
+                                <select name="payement_chez">
                                     <option value="Chez moi">🏠 Chez moi (Côte d'Ivoire)</option>
                                     <option value="Chez le patron">👔 Chez le patron (Côte d'Ivoire)</option>
                                 </select>
                             </div>
                         </div>
-                        
-                        <!-- Alerte paiement à l'arrivée -->
                         <div id="alertePaiementArrivee" style="display: none; margin-top: 16px; padding: 12px 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span>⏰</span>
@@ -162,7 +159,7 @@
                     </div>
                 </div>
                 
-                <!-- MODE CLIENT NORMAL (DÉPOSANT) -->
+                <!-- MODE DÉPOSANT -->
                 <div id="modeDeposant">
                     <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -172,19 +169,19 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>👤 Expéditeur (Côte d'Ivoire)</label>
-                                <input type="text" name="deposant_nom" required placeholder="Nom complet">
+                                <input type="text" name="deposant_nom" id="deposantNom" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
                                 <label>📞 Téléphone expéditeur</label>
-                                <input type="tel" name="deposant_telephone" required placeholder="XX XXX XX XX">
+                                <input type="tel" name="deposant_telephone" id="deposantTelephone" placeholder="XX XXX XX XX">
                             </div>
                             <div class="form-group">
                                 <label>🎯 Destinataire (France)</label>
-                                <input type="text" name="destinataire_nom" required placeholder="Nom complet">
+                                <input type="text" name="destinataire_nom" id="destinataireNom" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
                                 <label>📞 Téléphone destinataire</label>
-                                <input type="tel" name="destinataire_telephone" required placeholder="XX XXX XX XX">
+                                <input type="tel" name="destinataire_telephone" id="destinataireTelephone" placeholder="XX XXX XX XX">
                             </div>
                         </div>
                     </div>
@@ -251,7 +248,6 @@
                             </div>
                         </div>
                         
-                        <!-- Alerte paiement à l'arrivée pour déposant -->
                         <div id="alertePaiementArriveeDeposant" style="display: none; margin-top: 16px; padding: 12px 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span>⏰</span>
@@ -414,35 +410,39 @@
         updatePrix();
     });
     
-    // Moyen paiement livreur - avec alerte paiement à l'arrivée
+    // Moyen paiement livreur
     const moyenPayementLivreur = document.getElementById('moyenPayementLivreur');
-    moyenPayementLivreur.addEventListener('change', function() {
-        const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
-        const alerteDiv = document.getElementById('alertePaiementArrivee');
-        const payementChezDiv = document.getElementById('payementChezLivreur');
-        
-        if (alerteDiv) {
-            alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
-        }
-        if (payementChezDiv) {
-            payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
-        }
-    });
+    if (moyenPayementLivreur) {
+        moyenPayementLivreur.addEventListener('change', function() {
+            const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
+            const alerteDiv = document.getElementById('alertePaiementArrivee');
+            const payementChezDiv = document.getElementById('payementChezLivreur');
+            
+            if (alerteDiv) {
+                alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
+            }
+            if (payementChezDiv) {
+                payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
+            }
+        });
+    }
     
-    // Moyen paiement déposant - avec alerte paiement à l'arrivée
+    // Moyen paiement déposant
     const moyenPayementDeposant = document.getElementById('moyenPayementDeposant');
-    moyenPayementDeposant.addEventListener('change', function() {
-        const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
-        const alerteDiv = document.getElementById('alertePaiementArriveeDeposant');
-        const payementChezDiv = document.getElementById('payementChezDeposant');
-        
-        if (alerteDiv) {
-            alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
-        }
-        if (payementChezDiv) {
-            payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
-        }
-    });
+    if (moyenPayementDeposant) {
+        moyenPayementDeposant.addEventListener('change', function() {
+            const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
+            const alerteDiv = document.getElementById('alertePaiementArriveeDeposant');
+            const payementChezDiv = document.getElementById('payementChezDeposant');
+            
+            if (alerteDiv) {
+                alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
+            }
+            if (payementChezDiv) {
+                payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
+            }
+        });
+    }
     
     function updatePrix() {
         const type = document.getElementById('typeColisDeposant').value;
@@ -478,72 +478,28 @@
         document.getElementById('prixNegocieGroup').style.display = this.checked ? 'block' : 'none';
     });
     
-    // Soumission du formulaire
+    // SOUMISSION DU FORMULAIRE - VERSION SIMPLIFIÉE
     document.getElementById('colisForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const formData = new FormData();
-        const typeFlux = document.querySelector('input[name="type_flux"]:checked').value;
-        formData.append('type_flux', typeFlux);
-        
-        const isEnvoi = typeFlux === 'envoi_france';
-        
-        if (!isEnvoi) {
-            // Mode RÉCEPTION
-            formData.append('recuperateur_nom', document.getElementById('recuperateur_nom').value);
-            formData.append('recuperateur_telephone', document.getElementById('recuperateur_telephone').value);
-            formData.append('montant_paye', document.getElementById('montant_paye').value);
-            formData.append('type_colis', document.getElementById('typeColisArrivant').value);
-            if (document.getElementById('typeColisArrivant').value === 'Autre') {
-                formData.append('type_colis_autre', document.querySelector('#autreColisArrivant input').value);
+        // Désactiver les champs des sections cachées
+        const sections = ['sectionArrivant', 'modeLivreur', 'modeDeposant'];
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section && section.style.display === 'none') {
+                const inputs = section.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                });
+            } else if (section) {
+                const inputs = section.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.disabled = false;
+                });
             }
-            formData.append('destinataire_nom', document.getElementById('destinataireNomArrivant').value);
-            formData.append('destinataire_telephone', document.getElementById('destinataireTelArrivant').value);
-            formData.append('moyen_payement', document.getElementById('moyenPayementArrivant').value);
-            formData.append('notes', document.querySelector('textarea[name="notes"]').value);
-        } else {
-            const isLivreur = document.getElementById('estLivreur').checked;
-            formData.append('est_livreur', isLivreur ? 'on' : 'off');
-            
-            if (isLivreur) {
-                // Mode TRANSPORTEUR
-                formData.append('destinataire_nom', document.getElementById('destinataireNomLivreur').value);
-                formData.append('destinataire_telephone', document.getElementById('destinataireTelLivreur').value);
-                formData.append('type_colis', document.getElementById('typeColisLivreur').value);
-                if (document.getElementById('typeColisLivreur').value === 'Autre') {
-                    formData.append('type_colis_autre', document.querySelector('#autreColisLivreur input').value);
-                }
-                formData.append('prix_negocie', document.getElementById('prixNegocieLivreur').value);
-                formData.append('moyen_payement', document.getElementById('moyenPayementLivreur').value);
-                if (document.getElementById('moyenPayementLivreur').value === 'Wave' || 
-                    document.getElementById('moyenPayementLivreur').value === 'Orange Money') {
-                    formData.append('payement_chez', document.querySelector('#payementChezLivreur select').value);
-                }
-                formData.append('notes', document.querySelector('textarea[name="notes"]').value);
-            } else {
-                // Mode DÉPOSANT
-                formData.append('deposant_nom', document.querySelector('input[name="deposant_nom"]').value);
-                formData.append('deposant_telephone', document.querySelector('input[name="deposant_telephone"]').value);
-                formData.append('destinataire_nom', document.querySelector('input[name="destinataire_nom"]').value);
-                formData.append('destinataire_telephone', document.querySelector('input[name="destinataire_telephone"]').value);
-                formData.append('type_colis', document.getElementById('typeColisDeposant').value);
-                if (document.getElementById('typeColisDeposant').value === 'Autre') {
-                    formData.append('type_colis_autre', document.querySelector('#autreColisDeposant input').value);
-                }
-                formData.append('nombre_colis', document.querySelector('input[name="nombre_colis"]').value);
-                formData.append('poids', document.getElementById('poids').value);
-                formData.append('est_negocie', document.getElementById('estNegocie').checked ? 'on' : 'off');
-                if (document.getElementById('estNegocie').checked) {
-                    formData.append('prix_negocie', document.getElementById('prixNegocie').value);
-                }
-                formData.append('moyen_payement', document.getElementById('moyenPayementDeposant').value);
-                if (document.getElementById('moyenPayementDeposant').value === 'Wave' || 
-                    document.getElementById('moyenPayementDeposant').value === 'Orange Money') {
-                    formData.append('payement_chez', document.querySelector('#payementChezDeposant select').value);
-                }
-                formData.append('notes', document.querySelector('textarea[name="notes"]').value);
-            }
-        }
+        });
+        
+        const formData = new FormData(this);
         
         const response = await fetch('/add', {method: 'POST', body: formData});
         const result = await response.json();

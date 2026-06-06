@@ -1,105 +1,305 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="card">
+<div class="glass-card">
     <div class="card-header">
         <h2>📋 Liste des colis</h2>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Gérez les statuts de vos expéditions</p>
     </div>
-    
-    <div class="filters-bar">
-        <div class="filter-item">
-            <label>Filtrer par statut</label>
-            <select id="filterStatut">
-                <option value="all">Tous</option>
-                <option value="En attente">⏳ En attente</option>
-                <option value="Validé">✅ Validé</option>
-                <option value="Parti">✈️ Parti</option>
-                <option value="Arrivé">📍 Arrivé</option>
-                <option value="Récupéré">🏠 Récupéré</option>
-            </select>
+    <div class="card-body">
+        
+        <!-- STATS RAPIDES -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #22c55e;" id="statsEnAttente">0</div>
+                <div style="font-size: 11px; color: #666;">En attente</div>
+            </div>
+            <div style="background: #fef3c7; padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #e67e22;" id="statsParti">0</div>
+                <div style="font-size: 11px; color: #666;">Partis</div>
+            </div>
+            <div style="background: #dbeafe; padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="statsArrive">0</div>
+                <div style="font-size: 11px; color: #666;">Arrivés</div>
+            </div>
+            <div style="background: #e0e7ff; padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #6366f1;" id="statsRecupere">0</div>
+                <div style="font-size: 11px; color: #666;">Récupérés</div>
+            </div>
         </div>
-        <button class="btn btn-primary" onclick="chargerListe()">🔄 Actualiser</button>
-        <button class="btn btn-success" onclick="exportToExcel()">📊 Exporter Excel</button>
-    </div>
-    
-    <div class="table-wrapper">
-        <table class="colis-table">
-            <thead>
-                <tr><th>ID</th><th>Déposant</th><th>Destinataire</th><th>Type</th><th>Nb</th><th>Poids</th><th>Prix (€)</th><th>Payement</th><th>Statut</th><th>Actions</th></tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="10" class="text-center">Chargement...</td></tr>
-            </tbody>
-        </table>
+        
+        <!-- FILTRES RAPIDES -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="filter-btn active" data-filter="all">Tous</button>
+            <button class="filter-btn" data-filter="En attente">⏳ En attente</button>
+            <button class="filter-btn" data-filter="Parti">✈️ Parti</button>
+            <button class="filter-btn" data-filter="Récupéré">🏠 Récupéré</button>
+        </div>
+        
+        <!-- ACTIONS RAPIDES -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="marquerTousPartis()" style="padding: 6px 12px; font-size: 12px;">✈️ Marquer tous partis</button>
+            <button class="btn btn-outline" onclick="exportToExcel()" style="padding: 6px 12px; font-size: 12px;">📊 Exporter</button>
+            <button class="btn btn-outline" onclick="actualiser()" style="padding: 6px 12px; font-size: 12px;">🔄 Actualiser</button>
+        </div>
+        
+        <!-- LISTE DES COLIS -->
+        <div class="table-wrapper">
+            <table class="colis-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Expéditeur</th>
+                        <th>Destinataire</th>
+                        <th>Type</th>
+                        <th>Prix (€)</th>
+                        <th>Statut</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="7" class="text-center">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
+<!-- MODAL PERSONNALISÉ POUR RÉCUPÉRATION -->
+<div id="modalRecuperation" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 24px; width: 90%; max-width: 400px; overflow: hidden;">
+        <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="margin: 0;">🏠 Confirmer la récupération</h3>
+        </div>
+        <div style="padding: 20px;">
+            <p>Qui a récupéré ce colis ?</p>
+            <input type="text" id="recupNom" placeholder="Nom de la personne" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px;">
+            <input type="tel" id="recupTel" placeholder="Téléphone" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
+        </div>
+        <div style="padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="fermerModal()" class="btn btn-secondary" style="padding: 8px 16px;">Annuler</button>
+            <button onclick="confirmerRecuperation()" class="btn btn-primary" style="padding: 8px 16px;">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .filter-btn {
+        background: #f1f5f9;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 40px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-btn.active {
+        background: #e67e22;
+        color: white;
+    }
+    .action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .action-btn.partir {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+    .action-btn.recuperer {
+        background: #d1fae5;
+        color: #059669;
+    }
+    .action-btn:hover {
+        transform: scale(1.02);
+    }
+</style>
+
 <script>
     let colisData = [];
+    let selectedColisId = null;
+    let filtreActuel = 'all';
     
-    async function chargerListe() {
+    async function chargerColis() {
         const response = await fetch('/api/colis');
         colisData = await response.json();
-        const filter = document.getElementById('filterStatut').value;
-        const filtered = filter === 'all' ? colisData : colisData.filter(c => c.statut === filter);
+        mettreAJourStats();
+        afficherColis();
+    }
+    
+    function mettreAJourStats() {
+        const enAttente = colisData.filter(c => c.statut === 'En attente').length;
+        const parti = colisData.filter(c => c.statut === 'Parti').length;
+        const arrive = colisData.filter(c => c.statut === 'Arrivé').length;
+        const recupere = colisData.filter(c => c.statut === 'Récupéré').length;
+        
+        document.getElementById('statsEnAttente').textContent = enAttente;
+        document.getElementById('statsParti').textContent = parti;
+        document.getElementById('statsArrive').textContent = arrive;
+        document.getElementById('statsRecupere').textContent = recupere;
+    }
+    
+    function afficherColis() {
+        let filtres = colisData;
+        if (filtreActuel !== 'all') {
+            filtres = colisData.filter(c => c.statut === filtreActuel);
+        }
         
         const tbody = document.getElementById('tableBody');
-        if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">Aucun colis trouvé</td></tr>';
+        if (filtres.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun colis trouvé</td></tr>';
             return;
         }
         
-        tbody.innerHTML = filtered.map(c => `
+        tbody.innerHTML = filtres.map(c => {
+            let actionHtml = '';
+            
+            // Déterminer l'action selon le type de flux et le statut
+            if (c.type_flux === 'envoi_france') {
+                // Côte d'Ivoire → France : seulement "Parti"
+                if (c.statut === 'En attente') {
+                    actionHtml = `<button class="action-btn partir" onclick="marquerParti(${c.id})">✈️ Marquer Parti</button>`;
+                } else if (c.statut === 'Parti') {
+                    actionHtml = `<span style="color: #22c55e;">✓ Expédié</span>`;
+                } else {
+                    actionHtml = `<span style="color: #94a3b8;">Terminé</span>`;
+                }
+            } else {
+                // France → Côte d'Ivoire : seulement "Récupéré"
+                if (c.statut === 'En attente') {
+                    actionHtml = `<button class="action-btn recuperer" onclick="ouvrirModalRecuperation(${c.id})">🏠 Récupéré</button>`;
+                } else if (c.statut === 'Récupéré') {
+                    let info = '';
+                    if (c.recuperateur_nom) info = ` par ${c.recuperateur_nom}`;
+                    actionHtml = `<span style="color: #22c55e;">✓ Récupéré${info}</span>`;
+                } else {
+                    actionHtml = `<span style="color: #94a3b8;">${c.statut}</span>`;
+                }
+            }
+            
+            // Afficher l'expéditeur/déposant
+            let expediteur = c.deposant_nom || c.livreur_nom || '-';
+            
+            return `
             <tr>
                 <td><strong>#${c.id}</strong></td>
-                <td>${c.deposant_nom}<br><small>${c.deposant_telephone}</small></td>
-                <td>${c.destinataire_nom}<br><small>${c.destinataire_telephone}</small></td>
-                <td>${c.type_colis}</td>
-                <td>${c.nombre_colis || 1}</td>
-                <td>${c.poids ? c.poids + ' kg' : '-'}</td>
-                <td><strong>${c.prix_final} €</strong></td>
-                <td><small>${c.moyen_payement}${c.payement_chez ? '<br>('+c.payement_chez+')' : ''}</small></td>
-                <td><span class="status-badge status-${c.statut.replace(/ /g, '-')}">${c.statut}</span></td>
-                <td>
-                    <button class="btn btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="changerStatut(${c.id}, '${c.statut}')">📊 Changer</button>
-                    <button class="btn btn-danger" style="padding:5px 10px; font-size:12px; margin-top:5px;" onclick="supprimerColis(${c.id})">🗑️ Supprimer</button>
-                </td>
-            </tr>
-        `).join('');
+                <td><small>${expediteur}<br>📞 ${c.deposant_telephone || '-'}</small></td>
+                <td><small>${c.destinataire_nom || '-'}<br>📞 ${c.destinataire_telephone || '-'}</small></td>
+                <td><small>${c.type_colis || '-'}</small></td>
+                <td><strong>${c.prix_final || c.montant_paye || 0} €</strong></td>
+                <td><span class="status-badge status-${c.statut?.replace(/ /g, '-') || 'En-attente'}">${c.statut || 'En attente'}</span></td>
+                <td>${actionHtml}</td>
+            </tr>`;
+        }).join('');
     }
     
-    async function changerStatut(id, statutActuel) {
-        const response = await fetch(`/api/statuts-possibles/${statutActuel}`);
-        const statutsPossibles = await response.json();
+    async function marquerParti(id) {
+        if (confirm('Confirmer que ce colis est parti vers la France ?')) {
+            const response = await fetch(`/api/colis/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({statut: 'Parti'})
+            });
+            if (response.ok) chargerColis();
+        }
+    }
+    
+    function ouvrirModalRecuperation(id) {
+        selectedColisId = id;
+        document.getElementById('recupNom').value = '';
+        document.getElementById('recupTel').value = '';
+        document.getElementById('modalRecuperation').style.display = 'flex';
+    }
+    
+    function fermerModal() {
+        document.getElementById('modalRecuperation').style.display = 'none';
+        selectedColisId = null;
+    }
+    
+    async function confirmerRecuperation() {
+        const nom = document.getElementById('recupNom').value;
+        const tel = document.getElementById('recupTel').value;
         
-        if (statutsPossibles.length === 0) {
-            alert('Ce colis est déjà au statut final');
+        if (!nom) {
+            alert('Veuillez entrer le nom de la personne qui récupère');
             return;
         }
         
-        const nouveauStatut = prompt(`Changer statut du colis #${id}\nStatut actuel: ${statutActuel}\n\nChoisir: ${statutsPossibles.join(' / ')}`, statutsPossibles[0]);
+        const response = await fetch(`/api/colis/${selectedColisId}/statut`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                statut: 'Récupéré',
+                recuperateur_nom: nom,
+                recuperateur_telephone: tel
+            })
+        });
         
-        if (nouveauStatut && statutsPossibles.includes(nouveauStatut)) {
-            const updateResponse = await fetch(`/api/colis/${id}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({statut: nouveauStatut})
-            });
-            const result = await updateResponse.json();
-            if (result.success) {
-                chargerListe();
-            }
+        if (response.ok) {
+            fermerModal();
+            chargerColis();
         }
     }
     
-    async function supprimerColis(id) {
-        if (!confirm('Supprimer définitivement ce colis ?')) return;
-        const response = await fetch(`/api/colis/${id}`, {method: 'DELETE'});
-        const result = await response.json();
-        if (result.success) chargerListe();
+    async function marquerTousPartis() {
+        const enAttente = colisData.filter(c => c.type_flux === 'envoi_france' && c.statut === 'En attente');
+        if (enAttente.length === 0) {
+            alert('Aucun colis en attente pour la Côte d\'Ivoire → France');
+            return;
+        }
+        
+        if (confirm(`Marquer les ${enAttente.length} colis comme "Parti" ?`)) {
+            for (const colis of enAttente) {
+                await fetch(`/api/colis/${colis.id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({statut: 'Parti'})
+                });
+            }
+            chargerColis();
+        }
     }
     
-    document.getElementById('filterStatut').addEventListener('change', chargerListe);
-    chargerListe();
+    function actualiser() {
+        chargerColis();
+    }
+    
+    // Filtres
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filtreActuel = this.dataset.filter;
+            afficherColis();
+        });
+    });
+    
+    function exportToExcel() {
+        let csv = "ID;Type;Expéditeur;Tél Exp;Destinataire;Tél Dest;Type Colis;Prix;Payement;Statut;Date\n";
+        colisData.forEach(c => {
+            csv += `${c.id};`;
+            csv += `${c.type_flux === 'envoi_france' ? 'CI→FR' : 'FR→CI'};`;
+            csv += `${c.deposant_nom || '-'};`;
+            csv += `${c.deposant_telephone || '-'};`;
+            csv += `${c.destinataire_nom || '-'};`;
+            csv += `${c.destinataire_telephone || '-'};`;
+            csv += `${c.type_colis || '-'};`;
+            csv += `${c.prix_final || c.montant_paye || 0};`;
+            csv += `${c.moyen_payement || '-'};`;
+            csv += `${c.statut};`;
+            csv += `${c.date_creation}\n`;
+        });
+        const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `colis_export_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+    }
+    
+    chargerColis();
 </script>
 {% endblock %}
