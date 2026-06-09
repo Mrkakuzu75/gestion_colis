@@ -3,8 +3,8 @@
 {% block content %}
 <div class="glass-card">
     <div class="card-header">
-        <h2>✈️ Nouvel envoi</h2>
-        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Renseignez les informations ci-dessous</p>
+        <h2>✈️ NOUVEAU COLIS</h2>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Enregistrez un colis (départ ou arrivée)</p>
     </div>
     <div class="card-body">
         
@@ -16,15 +16,15 @@
                     <label class="radio-card" style="flex:1; min-width: 200px;">
                         <input type="radio" name="type_flux" value="envoi_france" checked>
                         <div>
-                            <strong>📤 Côte d'Ivoire → France</strong>
-                            <p style="font-size: 12px; color: #666; margin-top: 4px;">Envoi depuis la Côte d'Ivoire</p>
+                            <strong>📤 ENVOI</strong>
+                            <p style="font-size: 12px; color: #666; margin-top: 4px;">Côte d'Ivoire → France</p>
                         </div>
                     </label>
                     <label class="radio-card" style="flex:1; min-width: 200px;">
                         <input type="radio" name="type_flux" value="reception_france">
                         <div>
-                            <strong>📥 France → Côte d'Ivoire</strong>
-                            <p style="font-size: 12px; color: #666; margin-top: 4px;">Réception en Côte d'Ivoire</p>
+                            <strong>📥 RÉCEPTION</strong>
+                            <p style="font-size: 12px; color: #666; margin-top: 4px;">France → Côte d'Ivoire</p>
                         </div>
                     </label>
                 </div>
@@ -33,25 +33,18 @@
             <!-- SECTION RÉCEPTION -->
             <div id="sectionArrivant" style="display: none;">
                 <div style="background: #fef9f1; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #ffe4c4;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                        <span style="background: #e67e22; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-                        <h3 style="font-size: 15px; font-weight: 600; color: #1a2a3a;">Réception en Côte d'Ivoire</h3>
-                    </div>
+                    <h3 style="margin-bottom: 15px;">📥 Colis arrivant de France</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>👤 Personne qui récupère</label>
-                            <input type="text" name="recuperateur_nom" id="recuperateur_nom" placeholder="Nom complet">
+                            <label>👤 DESTINATAIRE</label>
+                            <input type="text" name="destinataire_nom" id="destinataireNomArrivant" placeholder="Nom complet">
                         </div>
                         <div class="form-group">
-                            <label>📞 Téléphone</label>
-                            <input type="tel" name="recuperateur_telephone" id="recuperateur_telephone" placeholder="XX XXX XX XX">
+                            <label>📞 TÉLÉPHONE DESTINATAIRE</label>
+                            <input type="tel" name="destinataire_telephone" id="destinataireTelArrivant" placeholder="XX XXX XX XX">
                         </div>
                         <div class="form-group">
-                            <label>💰 Montant payé</label>
-                            <input type="number" name="montant_paye" id="montant_paye" step="0.01" placeholder="0.00 €">
-                        </div>
-                        <div class="form-group">
-                            <label>📦 Type de colis</label>
+                            <label>📦 TYPE DE COLIS</label>
                             <select name="type_colis" id="typeColisArrivant">
                                 <option value="Vêtements">👕 Vêtements</option>
                                 <option value="Électronique">📱 Électronique</option>
@@ -59,61 +52,54 @@
                                 <option value="Document">📄 Document</option>
                                 <option value="Perruque">💇 Perruque</option>
                                 <option value="Maillot">⚽ Maillot</option>
+                                <option value="Sac">👜 Sac</option>
                                 <option value="Autre">📦 Autre</option>
                             </select>
                         </div>
                         <div class="form-group" id="autreColisArrivant" style="display: none;">
-                            <label>✏️ Précisez</label>
-                            <input type="text" name="type_colis_autre" placeholder="Ex: Chaussures, Livres...">
+                            <label>✏️ PRÉCISEZ</label>
+                            <input type="text" name="type_colis_autre" placeholder="Ex: Chaussures...">
                         </div>
                         <div class="form-group">
-                            <label>🎯 Destinataire (si différent)</label>
-                            <input type="text" name="destinataire_nom" id="destinataireNomArrivant" placeholder="Nom">
+                            <label>💰 PRIX À PAYER (€)</label>
+                            <input type="number" name="montant_paye" id="montantPayeArrivant" step="0.01" placeholder="0.00">
                         </div>
-                        <div class="form-group">
-                            <label>📞 Tél destinataire</label>
-                            <input type="tel" name="destinataire_telephone" id="destinataireTelArrivant" placeholder="Téléphone">
-                        </div>
-                        <div class="form-group">
-                            <label>💳 Moyen de paiement</label>
-                            <select name="moyen_payement" id="moyenPayementArrivant">
-                                <option value="Espèces">💵 Espèces</option>
-                                <option value="Wave">📱 Wave</option>
-                                <option value="Orange Money">🟠 Orange Money</option>
-                                <option value="Ria Money Gram">💶 Ria Money Gram</option>
-                            </select>
-                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>👤 EXPÉDITEUR (optionnel)</label>
+                        <input type="text" name="recuperateur_nom" id="recuperateurNom" placeholder="Nom de l'expéditeur">
+                    </div>
+                    <div class="form-group">
+                        <label>📝 NOTES</label>
+                        <textarea name="notes" rows="2"></textarea>
                     </div>
                 </div>
             </div>
             
             <!-- SECTION ENVOI -->
             <div id="sectionPartant">
-                <div style="background: #f0f9ff; border-radius: 20px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #dbeafe;">
-                    <label class="checkbox-wrapper" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                <div style="background: #f0f9ff; border-radius: 20px; padding: 16px 20px; margin-bottom: 24px;">
+                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
                         <input type="checkbox" name="est_livreur" id="estLivreur" style="width: 18px; height: 18px;">
-                        <span style="font-weight: 500;">🚚 Envoi par transporteur (livraison rapide)</span>
+                        <span style="font-weight: 500;">🚚 Envoi par transporteur</span>
                     </label>
                 </div>
                 
-                <!-- MODE TRANSPORTEUR -->
+                <!-- MODE LIVREUR -->
                 <div id="modeLivreur" style="display: none;">
-                    <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                            <span style="background: #3b82f6; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-                            <h3 style="font-size: 15px; font-weight: 600; color: #1a2a3a;">Informations livraison</h3>
-                        </div>
+                    <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 15px;">🚚 Envoi par transporteur</h3>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>🎯 Destinataire (France)</label>
+                                <label>🎯 DESTINATAIRE (France)</label>
                                 <input type="text" name="destinataire_nom" id="destinataireNomLivreur" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
-                                <label>📞 Téléphone destinataire</label>
+                                <label>📞 TÉLÉPHONE DESTINATAIRE</label>
                                 <input type="tel" name="destinataire_telephone" id="destinataireTelLivreur" placeholder="Téléphone">
                             </div>
                             <div class="form-group">
-                                <label>📦 Type de colis</label>
+                                <label>📦 TYPE DE COLIS</label>
                                 <select name="type_colis" id="typeColisLivreur">
                                     <option value="Vêtements">👕 Vêtements</option>
                                     <option value="Électronique">📱 Électronique</option>
@@ -121,79 +107,80 @@
                                     <option value="Document">📄 Document</option>
                                     <option value="Perruque">💇 Perruque</option>
                                     <option value="Maillot">⚽ Maillot</option>
+                                    <option value="Sac">👜 Sac</option>
                                     <option value="Autre">📦 Autre</option>
                                 </select>
                             </div>
                             <div class="form-group" id="autreColisLivreur" style="display: none;">
-                                <label>✏️ Précisez</label>
+                                <label>✏️ PRÉCISEZ</label>
                                 <input type="text" name="type_colis_autre" placeholder="Ex: Chaussures...">
                             </div>
                             <div class="form-group">
-                                <label>💰 Prix (€)</label>
-                                <input type="number" name="prix_negocie" id="prixNegocieLivreur" step="0.01" placeholder="0.00">
+                                <label>⚖️ POIDS (kg)</label>
+                                <input type="number" name="poids" id="poidsLivreur" step="0.1" placeholder="Ex: 2.5">
                             </div>
                             <div class="form-group">
-                                <label>💳 Moyen de paiement</label>
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" name="est_negocie_livreur" id="estNegocieLivreur">
+                                    <span>💰 PRIX NÉGOCIÉ</span>
+                                </label>
+                                <div id="prixNegocieGroupLivreur" style="display: none; margin-top: 10px;">
+                                    <input type="number" name="prix_negocie" id="prixNegocieLivreur" step="0.01" placeholder="Prix final négocié">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>💳 MOYEN DE PAIEMENT</label>
                                 <select name="moyen_payement" id="moyenPayementLivreur">
-                                    <option value="Espèces">💵 Espèces (Côte d'Ivoire)</option>
-                                    <option value="Wave">📱 Wave (Côte d'Ivoire)</option>
-                                    <option value="Orange Money">🟠 Orange Money (Côte d'Ivoire)</option>
+                                    <option value="Espèces">💵 Espèces</option>
+                                    <option value="Wave">📱 Wave</option>
+                                    <option value="Orange Money">🟠 Orange Money</option>
                                     <option value="Ria Money Gram">💶 Ria Money Gram</option>
-                                    <option value="Payement à l'arrivée">⏰ Paiement à l'arrivée (France)</option>
+                                    <option value="Payement à l'arrivée">⏰ Paiement à l'arrivée</option>
                                 </select>
                             </div>
                             <div class="form-group" id="payementChezLivreur" style="display: none;">
-                                <label>🏠 Payé chez</label>
+                                <label>🏠 PAYÉ CHEZ</label>
                                 <select name="payement_chez">
-                                    <option value="Chez moi">🏠 Chez moi (Côte d'Ivoire)</option>
-                                    <option value="Chez le patron">👔 Chez le patron (Côte d'Ivoire)</option>
+                                    <option value="Chez moi">🏠 Chez moi</option>
+                                    <option value="Chez le patron">👔 Chez le patron</option>
                                 </select>
                             </div>
                         </div>
-                        <div id="alertePaiementArrivee" style="display: none; margin-top: 16px; padding: 12px 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span>⏰</span>
-                                <span style="font-size: 13px; color: #b45309;">Le paiement sera effectué par le destinataire en France à la livraison</span>
-                            </div>
+                        <div id="prixPreviewLivreur" class="price-preview" style="display: none; margin-top: 15px;">
+                            <strong>💰 Tarif estimé : <span id="prixEurosLivreur">0</span> €</strong>
+                        </div>
+                        <div class="form-group">
+                            <label>📝 NOTES</label>
+                            <textarea name="notes" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
                 
                 <!-- MODE DÉPOSANT -->
                 <div id="modeDeposant">
-                    <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                            <span style="background: #10b981; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-                            <h3 style="font-size: 15px; font-weight: 600; color: #1a2a3a;">Expéditeur & Destinataire</h3>
-                        </div>
+                    <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 15px;">👤 Envoi par déposant</h3>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>👤 Expéditeur (Côte d'Ivoire)</label>
+                                <label>👤 EXPÉDITEUR</label>
                                 <input type="text" name="deposant_nom" id="deposantNom" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
-                                <label>📞 Téléphone expéditeur</label>
+                                <label>📞 TÉLÉPHONE EXPÉDITEUR</label>
                                 <input type="tel" name="deposant_telephone" id="deposantTelephone" placeholder="XX XXX XX XX">
                             </div>
                             <div class="form-group">
-                                <label>🎯 Destinataire (France)</label>
-                                <input type="text" name="destinataire_nom" id="destinataireNom" placeholder="Nom complet">
+                                <label>🎯 DESTINATAIRE (France)</label>
+                                <input type="text" name="destinataire_nom" id="destinataireNomDeposant" placeholder="Nom complet">
                             </div>
                             <div class="form-group">
-                                <label>📞 Téléphone destinataire</label>
-                                <input type="tel" name="destinataire_telephone" id="destinataireTelephone" placeholder="XX XXX XX XX">
+                                <label>📞 TÉLÉPHONE DESTINATAIRE</label>
+                                <input type="tel" name="destinataire_telephone" id="destinataireTelDeposant" placeholder="Téléphone">
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                            <span style="background: #8b5cf6; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-                            <h3 style="font-size: 15px; font-weight: 600; color: #1a2a3a;">Détails du colis</h3>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>📦 Type de colis</label>
+                                <label>📦 TYPE DE COLIS</label>
                                 <select name="type_colis" id="typeColisDeposant">
                                     <option value="Vêtements">👕 Vêtements</option>
                                     <option value="Électronique">📱 Électronique</option>
@@ -201,85 +188,64 @@
                                     <option value="Document">📄 Document</option>
                                     <option value="Perruque">💇 Perruque</option>
                                     <option value="Maillot">⚽ Maillot</option>
+                                    <option value="Sac">👜 Sac</option>
                                     <option value="Autre">📦 Autre</option>
                                 </select>
                             </div>
                             <div class="form-group" id="autreColisDeposant" style="display: none;">
-                                <label>✏️ Précisez</label>
+                                <label>✏️ PRÉCISEZ</label>
                                 <input type="text" name="type_colis_autre" placeholder="Ex: Chaussures...">
                             </div>
                             <div class="form-group">
-                                <label>🔢 Nombre de colis</label>
+                                <label>🔢 NOMBRE DE COLIS</label>
                                 <input type="number" name="nombre_colis" value="1" min="1">
                             </div>
                             <div class="form-group" id="poidsGroup">
-                                <label>⚖️ Poids (kg)</label>
-                                <input type="number" name="poids" id="poids" step="0.1" placeholder="Ex: 2.5">
-                                <small style="color: #94a3b8;">1,1 kg = 2 kg (arrondi supérieur)</small>
+                                <label>⚖️ POIDS (kg)</label>
+                                <input type="number" name="poids" id="poidsDeposant" step="0.1" placeholder="Ex: 2.5">
+                                <small>⚠️ Arrondi supérieur : 1,01 kg = 2 kg</small>
                             </div>
                         </div>
-                        
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="checkbox-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px;">
                                     <input type="checkbox" name="est_negocie" id="estNegocie">
-                                    <span>💰 Prix négocié</span>
+                                    <span>💰 PRIX NÉGOCIÉ</span>
                                 </label>
                                 <div id="prixNegocieGroup" style="display: none; margin-top: 10px;">
-                                    <input type="number" name="prix_negocie" id="prixNegocie" step="0.01" placeholder="Prix final négocié">
+                                    <input type="number" name="prix_negocie" id="prixNegocieDeposant" step="0.01" placeholder="Prix final négocié">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>💳 Moyen de paiement</label>
+                                <label>💳 MOYEN DE PAIEMENT</label>
                                 <select name="moyen_payement" id="moyenPayementDeposant">
-                                    <option value="Espèces">💵 Espèces (Côte d'Ivoire)</option>
-                                    <option value="Wave">📱 Wave (Côte d'Ivoire)</option>
-                                    <option value="Orange Money">🟠 Orange Money (Côte d'Ivoire)</option>
+                                    <option value="Espèces">💵 Espèces</option>
+                                    <option value="Wave">📱 Wave</option>
+                                    <option value="Orange Money">🟠 Orange Money</option>
                                     <option value="Ria Money Gram">💶 Ria Money Gram</option>
-                                    <option value="Payement à l'arrivée">⏰ Paiement à l'arrivée (France)</option>
+                                    <option value="Payement à l'arrivée">⏰ Paiement à l'arrivée</option>
                                 </select>
                             </div>
                             <div class="form-group" id="payementChezDeposant" style="display: none;">
-                                <label>🏠 Payé chez</label>
+                                <label>🏠 PAYÉ CHEZ</label>
                                 <select name="payement_chez">
-                                    <option value="Chez moi">🏠 Chez moi (Côte d'Ivoire)</option>
-                                    <option value="Chez le patron">👔 Chez le patron (Côte d'Ivoire)</option>
+                                    <option value="Chez moi">🏠 Chez moi</option>
+                                    <option value="Chez le patron">👔 Chez le patron</option>
                                 </select>
                             </div>
                         </div>
-                        
-                        <div id="alertePaiementArriveeDeposant" style="display: none; margin-top: 16px; padding: 12px 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span>⏰</span>
-                                <span style="font-size: 13px; color: #b45309;">Le paiement sera effectué par le destinataire en France à la livraison</span>
-                            </div>
+                        <div id="prixPreview" class="price-preview" style="display: none; margin-top: 15px;">
+                            <strong>💰 Tarif estimé : <span id="prixEurosDeposant">0</span> €</strong>
                         </div>
-                        
-                        <div id="prixPreview" class="price-preview" style="display: none;">
-                            <strong>💰 Tarif estimé</strong>
-                            <div class="price-value">
-                                <span id="prixEuros">0</span> € 
-                                (<span id="prixCfa">0</span> FCFA)
-                            </div>
+                        <div class="form-group">
+                            <label>📝 NOTES</label>
+                            <textarea name="notes" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Notes -->
-            <div style="background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <span style="background: #6c757d; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-                    <h3 style="font-size: 15px; font-weight: 600; color: #1a2a3a;">Informations complémentaires</h3>
-                </div>
-                <div class="form-group">
-                    <textarea name="notes" rows="3" placeholder="Instructions particulières, référence, colis fragile, etc." style="resize: vertical;"></textarea>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px;">
-                ✅ Créer l'envoi
-            </button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;">✅ ENREGISTRER</button>
         </form>
         
         <div id="message" class="mt-20"></div>
@@ -293,91 +259,25 @@
         border-radius: 16px;
         padding: 14px 18px;
         cursor: pointer;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 12px;
     }
-    .radio-card:hover {
-        border-color: #e67e22;
-        background: #fef9f1;
+    .radio-card:hover { border-color: #e67e22; background: #fef9f1; }
+    .radio-card:has(input:checked) { border-color: #e67e22; background: #fef9f1; }
+    .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 4px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 14px;
     }
-    .radio-card input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #e67e22;
-        margin: 0;
-    }
-    .radio-card:has(input:checked) {
-        border-color: #e67e22;
-        background: #fef9f1;
-        box-shadow: 0 2px 8px rgba(230,126,34,0.1);
-    }
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-bottom: 4px;
-    }
-    .form-group {
-        margin-bottom: 20px;
-    }
-    .form-group label {
-        display: block;
-        font-size: 13px;
-        font-weight: 500;
-        color: #334155;
-        margin-bottom: 8px;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 12px 16px;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 16px;
-        font-size: 14px;
-        font-family: inherit;
-        transition: all 0.2s;
-        background: #ffffff;
-    }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #e67e22;
-        box-shadow: 0 0 0 3px rgba(230,126,34,0.1);
-    }
-    .price-preview {
-        background: #fef3c7;
-        padding: 14px 20px;
-        border-radius: 16px;
-        margin-top: 20px;
-        text-align: center;
-        border: 1px solid #fde68a;
-    }
-    .price-value {
-        font-size: 20px;
-        font-weight: 700;
-        color: #e67e22;
-        margin-top: 6px;
-    }
-    @media (max-width: 768px) {
-        .form-row {
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-        .radio-card {
-            min-width: 100%;
-        }
-    }
+    .price-preview { background: #fef3c7; padding: 14px 20px; border-radius: 16px; text-align: center; }
 </style>
 
 <script>
-    const typesSansPoids = ['Document', 'Perruque', 'Maillot'];
     const TAUX = 655.96;
     
-    // Gestion des radios pour le type d'expédition
+    // Gestion affichage selon type de flux
     document.querySelectorAll('input[name="type_flux"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const isEnvoi = this.value === 'envoi_france';
@@ -393,113 +293,122 @@
         document.getElementById('modeDeposant').style.display = isLivreur ? 'none' : 'block';
     });
     
-    // Type colis "Autre" pour arrivant
-    document.getElementById('typeColisArrivant').addEventListener('change', function() {
-        document.getElementById('autreColisArrivant').style.display = this.value === 'Autre' ? 'block' : 'none';
-    });
-    
-    // Type colis "Autre" pour mode livreur
-    document.getElementById('typeColisLivreur').addEventListener('change', function() {
-        document.getElementById('autreColisLivreur').style.display = this.value === 'Autre' ? 'block' : 'none';
-    });
-    
-    // Type colis "Autre" pour déposant
-    document.getElementById('typeColisDeposant').addEventListener('change', function() {
-        const autreDiv = document.getElementById('autreColisDeposant');
-        autreDiv.style.display = this.value === 'Autre' ? 'block' : 'none';
-        updatePrix();
-    });
-    
-    // Moyen paiement livreur
-    const moyenPayementLivreur = document.getElementById('moyenPayementLivreur');
-    if (moyenPayementLivreur) {
-        moyenPayementLivreur.addEventListener('change', function() {
-            const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
-            const alerteDiv = document.getElementById('alertePaiementArrivee');
-            const payementChezDiv = document.getElementById('payementChezLivreur');
-            
-            if (alerteDiv) {
-                alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
-            }
-            if (payementChezDiv) {
-                payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
-            }
-        });
-    }
-    
-    // Moyen paiement déposant
-    const moyenPayementDeposant = document.getElementById('moyenPayementDeposant');
-    if (moyenPayementDeposant) {
-        moyenPayementDeposant.addEventListener('change', function() {
-            const isPaiementArrivee = this.value === 'Payement à l\'arrivée';
-            const alerteDiv = document.getElementById('alertePaiementArriveeDeposant');
-            const payementChezDiv = document.getElementById('payementChezDeposant');
-            
-            if (alerteDiv) {
-                alerteDiv.style.display = isPaiementArrivee ? 'block' : 'none';
-            }
-            if (payementChezDiv) {
-                payementChezDiv.style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
-            }
-        });
-    }
-    
-    function updatePrix() {
-        const type = document.getElementById('typeColisDeposant').value;
-        const isSansPoids = typesSansPoids.includes(type);
-        const poidsGroup = document.getElementById('poidsGroup');
-        const prixPreview = document.getElementById('prixPreview');
-        
-        if (isSansPoids) {
-            poidsGroup.style.display = 'none';
-            prixPreview.style.display = 'none';
-            document.getElementById('estNegocie').checked = true;
-            document.getElementById('estNegocie').dispatchEvent(new Event('change'));
+    // Calcul prix pour déposant
+    function updatePrixDeposant() {
+        const poids = parseFloat(document.getElementById('poidsDeposant').value) || 0;
+        const estNegocie = document.getElementById('estNegocie').checked;
+        if (poids > 0 && !estNegocie) {
+            const arrondi = Math.ceil(poids);
+            const euros = arrondi * 10;
+            document.getElementById('prixEurosDeposant').textContent = euros;
+            document.getElementById('prixPreview').style.display = 'block';
         } else {
-            poidsGroup.style.display = 'block';
-            const poids = parseFloat(document.getElementById('poids').value) || 0;
-            if (poids > 0) {
-                const arrondi = Math.ceil(poids);
-                const euros = arrondi * 10;
-                const cfa = euros * TAUX;
-                document.getElementById('prixEuros').textContent = euros;
-                document.getElementById('prixCfa').textContent = Math.round(cfa);
-                prixPreview.style.display = 'block';
-            } else {
-                prixPreview.style.display = 'none';
-            }
+            document.getElementById('prixPreview').style.display = 'none';
         }
     }
     
-    document.getElementById('typeColisDeposant').addEventListener('change', updatePrix);
-    document.getElementById('poids').addEventListener('input', updatePrix);
+    // Calcul prix pour livreur
+    function updatePrixLivreur() {
+        const poids = parseFloat(document.getElementById('poidsLivreur').value) || 0;
+        const estNegocie = document.getElementById('estNegocieLivreur').checked;
+        if (poids > 0 && !estNegocie) {
+            const arrondi = Math.ceil(poids);
+            const euros = arrondi * 10;
+            document.getElementById('prixEurosLivreur').textContent = euros;
+            document.getElementById('prixPreviewLivreur').style.display = 'block';
+        } else {
+            document.getElementById('prixPreviewLivreur').style.display = 'none';
+        }
+    }
     
-    document.getElementById('estNegocie').addEventListener('change', function() {
-        document.getElementById('prixNegocieGroup').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('poidsDeposant').addEventListener('input', updatePrixDeposant);
+    document.getElementById('poidsLivreur').addEventListener('input', updatePrixLivreur);
+    document.getElementById('estNegocie').addEventListener('change', updatePrixDeposant);
+    document.getElementById('estNegocieLivreur').addEventListener('change', updatePrixLivreur);
+    
+    // Gestion des champs "Autre"
+    document.getElementById('typeColisArrivant').addEventListener('change', function() {
+        document.getElementById('autreColisArrivant').style.display = this.value === 'Autre' ? 'block' : 'none';
+    });
+    document.getElementById('typeColisLivreur').addEventListener('change', function() {
+        document.getElementById('autreColisLivreur').style.display = this.value === 'Autre' ? 'block' : 'none';
+    });
+    document.getElementById('typeColisDeposant').addEventListener('change', function() {
+        document.getElementById('autreColisDeposant').style.display = this.value === 'Autre' ? 'block' : 'none';
     });
     
-    // SOUMISSION DU FORMULAIRE - VERSION SIMPLIFIÉE
+    // Gestion payement chez
+    document.getElementById('moyenPayementLivreur').addEventListener('change', function() {
+        document.getElementById('payementChezLivreur').style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
+    });
+    document.getElementById('moyenPayementDeposant').addEventListener('change', function() {
+        document.getElementById('payementChezDeposant').style.display = (this.value === 'Wave' || this.value === 'Orange Money') ? 'block' : 'none';
+    });
+    
+    // SOUMISSION
     document.getElementById('colisForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Désactiver les champs des sections cachées
-        const sections = ['sectionArrivant', 'modeLivreur', 'modeDeposant'];
-        sections.forEach(sectionId => {
-            const section = document.getElementById(sectionId);
-            if (section && section.style.display === 'none') {
-                const inputs = section.querySelectorAll('input, select, textarea');
-                inputs.forEach(input => {
-                    input.disabled = true;
-                });
-            } else if (section) {
-                const inputs = section.querySelectorAll('input, select, textarea');
-                inputs.forEach(input => {
-                    input.disabled = false;
-                });
-            }
-        });
+        const formData = new FormData();
+        const typeFlux = document.querySelector('input[name="type_flux"]:checked').value;
+        formData.append('type_flux', typeFlux);
         
-        const formData = new FormData(this);
+        if (typeFlux === 'reception_france') {
+            // RÉCEPTION
+            formData.append('destinataire_nom', document.getElementById('destinataireNomArrivant').value);
+            formData.append('destinataire_telephone', document.getElementById('destinataireTelArrivant').value);
+            formData.append('type_colis', document.getElementById('typeColisArrivant').value);
+            if (document.getElementById('typeColisArrivant').value === 'Autre') {
+                formData.append('type_colis_autre', document.querySelector('#autreColisArrivant input').value);
+            }
+            formData.append('montant_paye', document.getElementById('montantPayeArrivant').value);
+            formData.append('recuperateur_nom', document.getElementById('recuperateurNom').value);
+            formData.append('notes', document.querySelector('#sectionArrivant textarea[name="notes"]').value);
+        } else {
+            const estLivreur = document.getElementById('estLivreur').checked;
+            formData.append('est_livreur', estLivreur ? 'on' : 'off');
+            
+            if (estLivreur) {
+                // MODE LIVREUR
+                formData.append('destinataire_nom', document.getElementById('destinataireNomLivreur').value);
+                formData.append('destinataire_telephone', document.getElementById('destinataireTelLivreur').value);
+                formData.append('type_colis', document.getElementById('typeColisLivreur').value);
+                if (document.getElementById('typeColisLivreur').value === 'Autre') {
+                    formData.append('type_colis_autre', document.querySelector('#autreColisLivreur input').value);
+                }
+                formData.append('poids', document.getElementById('poidsLivreur').value);
+                formData.append('est_negocie', document.getElementById('estNegocieLivreur').checked ? 'on' : 'off');
+                if (document.getElementById('estNegocieLivreur').checked) {
+                    formData.append('prix_negocie', document.getElementById('prixNegocieLivreur').value);
+                }
+                formData.append('moyen_payement', document.getElementById('moyenPayementLivreur').value);
+                if (document.getElementById('moyenPayementLivreur').value === 'Wave' || document.getElementById('moyenPayementLivreur').value === 'Orange Money') {
+                    formData.append('payement_chez', document.querySelector('#payementChezLivreur select').value);
+                }
+                formData.append('notes', document.querySelector('#modeLivreur textarea[name="notes"]').value);
+            } else {
+                // MODE DÉPOSANT
+                formData.append('deposant_nom', document.getElementById('deposantNom').value);
+                formData.append('deposant_telephone', document.getElementById('deposantTelephone').value);
+                formData.append('destinataire_nom', document.getElementById('destinataireNomDeposant').value);
+                formData.append('destinataire_telephone', document.getElementById('destinataireTelDeposant').value);
+                formData.append('type_colis', document.getElementById('typeColisDeposant').value);
+                if (document.getElementById('typeColisDeposant').value === 'Autre') {
+                    formData.append('type_colis_autre', document.querySelector('#autreColisDeposant input').value);
+                }
+                formData.append('nombre_colis', document.querySelector('input[name="nombre_colis"]').value);
+                formData.append('poids', document.getElementById('poidsDeposant').value);
+                formData.append('moyen_payement', document.getElementById('moyenPayementDeposant').value);
+                formData.append('est_negocie', document.getElementById('estNegocie').checked ? 'on' : 'off');
+                if (document.getElementById('estNegocie').checked) {
+                    formData.append('prix_negocie', document.getElementById('prixNegocieDeposant').value);
+                }
+                if (document.getElementById('moyenPayementDeposant').value === 'Wave' || document.getElementById('moyenPayementDeposant').value === 'Orange Money') {
+                    formData.append('payement_chez', document.querySelector('#payementChezDeposant select').value);
+                }
+                formData.append('notes', document.querySelector('#modeDeposant textarea[name="notes"]').value);
+            }
+        }
         
         const response = await fetch('/add', {method: 'POST', body: formData});
         const result = await response.json();
@@ -509,12 +418,10 @@
             msgDiv.innerHTML = '<div class="alert alert-success">✅ ' + result.message + ' ! Redirection...</div>';
             setTimeout(() => window.location.href = '/list', 1500);
         } else {
-            msgDiv.innerHTML = '<div class="alert alert-error">❌ ' + result.message + '</div>';
+            msgDiv.innerHTML = '<div class=" alert alert-error">❌ ' + result.message + '</div>';
         }
     });
     
-    // Initialisation
     document.querySelector('input[name="type_flux"]:checked').dispatchEvent(new Event('change'));
-    updatePrix();
 </script>
 {% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card">
+    <div class="card-header">
+        <h2>🏠 RÉCUPÉRATION DE COLIS</h2>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Recherchez et gérez les colis arrivant de France</p>
+    </div>
+    <div class="card-body">
+        
+        <!-- Barre de recherche -->
+        <div class="search-container">
+            <input type="tel" id="searchPhone" placeholder="Entrez le numéro de téléphone du destinataire" style="flex: 1; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 16px;">
+            <button class="btn btn-primary" onclick="rechercherColisArrivant()" style="padding: 14px 24px;">🔍 RECHERCHER</button>
+        </div>
+        
+        <!-- Liste des colis arrivants en attente -->
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 16px; margin-bottom: 15px;">📦 Colis en attente de récupération</h3>
+            <div id="listeAttente"></div>
+        </div>
+        
+        <!-- Résultats de recherche -->
+        <div id="resultatsRecherche" style="margin-top: 20px;"></div>
+        
+    </div>
+</div>
+
+<!-- MODAL DE RÉCUPÉRATION -->
+<div id="modalRecup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 24px; width: 90%; max-width: 450px; overflow: hidden;">
+        <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="margin: 0;">🏠 CONFIRMER LA RÉCUPÉRATION</h3>
+        </div>
+        <div style="padding: 20px;">
+            <div id="modalInfo" style="background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 20px;"></div>
+            
+            <div class="form-group">
+                <label>💰 Montant payé (€) *</label>
+                <input type="number" id="recupMontant" step="0.01" placeholder="0.00" style="width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+            </div>
+            
+            <div class="form-group">
+                <label>👤 Récupéré par</label>
+                <input type="text" id="recupNom" placeholder="Nom de la personne qui récupère" style="width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+            </div>
+        </div>
+        <div style="padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="fermerModal()" class="btn btn-secondary">Annuler</button>
+            <button onclick="confirmerRecuperation()" class="btn btn-primary">✅ Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .colis-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .colis-info {
+        flex: 2;
+    }
+    .colis-info span {
+        font-size: 13px;
+        color: #64748b;
+    }
+    .colis-info strong {
+        font-size: 15px;
+        color: #1e293b;
+    }
+    .btn-recuperer {
+        background: #e67e22;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .btn-recuperer:hover {
+        background: #d35400;
+    }
+    .badge-attente {
+        background: #fef3c7;
+        color: #d97706;
+        padding: 4px 12px;
+        border-radius: 40px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+</style>
+
+<script>
+    let colisSelectionne = null;
+    
+    async function chargerColisEnAttente() {
+        const response = await fetch('/api/colis/arrivants/en-attente');
+        const colis = await response.json();
+        
+        const div = document.getElementById('listeAttente');
+        
+        if (colis.length === 0) {
+            div.innerHTML = '<div style="padding: 20px; text-align: center; background: #f8fafc; border-radius: 16px;">✅ Aucun colis en attente</div>';
+            return;
+        }
+        
+        div.innerHTML = colis.map(c => `
+            <div class="colis-item">
+                <div class="colis-info">
+                    <strong>#${c.id}</strong> - ${c.destinataire_nom || '-'}<br>
+                    <span>📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || 0} €</span>
+                </div>
+                <div>
+                    <span class="badge-attente">⏳ En attente</span>
+                    <button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || 0})">🏠 Récupéré</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function rechercherColisArrivant() {
+        const phone = document.getElementById('searchPhone').value.trim();
+        
+        if (phone.length < 6) {
+            alert('Entrez au moins 6 chiffres');
+            return;
+        }
+        
+        const phoneClean = phone.replace(/[\s\.\-]/g, '');
+        const response = await fetch(`/api/colis/arrivants/recherche?q=${encodeURIComponent(phoneClean)}`);
+        const colis = await response.json();
+        
+        const div = document.getElementById('resultatsRecherche');
+        
+        if (colis.length === 0) {
+            div.innerHTML = '<div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 16px;">❌ Aucun colis trouvé pour ce numéro</div>';
+            return;
+        }
+        
+        div.innerHTML = colis.map(c => {
+            let statutHtml = '';
+            let boutonHtml = '';
+            
+            if (c.statut === 'Récupéré') {
+                const dateRecup = c.date_recuperation ? new Date(c.date_recuperation).toLocaleString('fr-FR') : '-';
+                statutHtml = '<span style="background:#d1fae5; color:#059669; padding:4px 12px; border-radius:40px;">✅ Récupéré le ' + dateRecup + '</span>';
+                boutonHtml = '<button disabled style="opacity:0.5; background:#94a3b8; padding:8px 20px; border-radius:40px;">Déjà récupéré</button>';
+            } else {
+                statutHtml = '<span class="badge-attente">⏳ En attente</span>';
+                boutonHtml = `<button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || 0})">🏠 Marquer récupéré</button>`;
+            }
+            
+            return `
+                <div class="colis-item" style="margin-top: 15px;">
+                    <div class="colis-info">
+                        <strong>#${c.id}</strong> - ${c.destinataire_nom || '-'}<br>
+                        <span>📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || 0} €</span>
+                    </div>
+                    <div>
+                        ${statutHtml}
+                        ${boutonHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function ouvrirModal(id, montant) {
+        colisSelectionne = id;
+        document.getElementById('recupMontant').value = montant;
+        document.getElementById('recupNom').value = '';
+        document.getElementById('modalRecup').style.display = 'flex';
+        
+        fetch(`/api/colis/${id}`)
+            .then(r => r.json())
+            .then(c => {
+                document.getElementById('modalInfo').innerHTML = `
+                    <div><strong>Colis #${c.id}</strong></div>
+                    <div>Destinataire: ${c.destinataire_nom || '-'}</div>
+                    <div>Téléphone: ${c.destinataire_telephone || '-'}</div>
+                    <div>Montant à payer: <strong style="color:#e67e22;">${c.prix_final || 0} €</strong></div>
+                `;
+            });
+    }
+    
+    function fermerModal() {
+        document.getElementById('modalRecup').style.display = 'none';
+        colisSelectionne = null;
+    }
+    
+    async function confirmerRecuperation() {
+        const montant = parseFloat(document.getElementById('recupMontant').value);
+        const recupNom = document.getElementById('recupNom').value;
+        
+        if (isNaN(montant) || montant <= 0) {
+            alert('Veuillez entrer le montant payé');
+            return;
+        }
+        
+        const response = await fetch(`/api/colis/${colisSelectionne}/statut`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                statut: 'Récupéré',
+                montant_paye: montant,
+                recuperateur_nom: recupNom || null
+            })
+        });
+        
+        if (response.ok) {
+            alert('✅ Colis marqué comme récupéré !');
+            fermerModal();
+            document.getElementById('searchPhone').value = '';
+            document.getElementById('resultatsRecherche').innerHTML = '';
+            chargerColisEnAttente();
+        } else {
+            alert('❌ Erreur');
+        }
+    }
+    
+    document.getElementById('searchPhone').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') rechercherColisArrivant();
+    });
+    
+    chargerColisEnAttente();
+</script>
+{% endblock %}

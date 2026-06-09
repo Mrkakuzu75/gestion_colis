@@ -3,82 +3,72 @@
 {% block content %}
 <div class="glass-card">
     <div class="card-header">
-        <h2>📋 Liste des colis</h2>
-        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Gérez les statuts de vos expéditions</p>
+        <h2>📋 LISTE DES COLIS</h2>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Gérez tous vos colis (envois et réceptions)</p>
     </div>
     <div class="card-body">
         
-        <!-- STATS RAPIDES -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-            <div style="background: #f0fdf4; padding: 12px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #22c55e;" id="statsEnAttente">0</div>
-                <div style="font-size: 11px; color: #666;">En attente</div>
-            </div>
-            <div style="background: #fef3c7; padding: 12px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #e67e22;" id="statsParti">0</div>
-                <div style="font-size: 11px; color: #666;">Partis</div>
-            </div>
-            <div style="background: #dbeafe; padding: 12px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="statsArrive">0</div>
-                <div style="font-size: 11px; color: #666;">Arrivés</div>
-            </div>
-            <div style="background: #e0e7ff; padding: 12px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #6366f1;" id="statsRecupere">0</div>
-                <div style="font-size: 11px; color: #666;">Récupérés</div>
-            </div>
-        </div>
-        
-        <!-- FILTRES RAPIDES -->
+        <!-- FILTRES -->
         <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-            <button class="filter-btn active" data-filter="all">Tous</button>
+            <button class="filter-btn active" data-filter="all">📊 Tous</button>
+            <button class="filter-btn" data-filter="envoi_france">📤 Envois (CI→FR)</button>
+            <button class="filter-btn" data-filter="reception_france">📥 Réceptions (FR→CI)</button>
             <button class="filter-btn" data-filter="En attente">⏳ En attente</button>
+            <button class="filter-btn" data-filter="Récupéré">✅ Récupéré</button>
             <button class="filter-btn" data-filter="Parti">✈️ Parti</button>
-            <button class="filter-btn" data-filter="Récupéré">🏠 Récupéré</button>
         </div>
         
-        <!-- ACTIONS RAPIDES -->
+        <!-- ACTIONS -->
         <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end;">
-            <button class="btn btn-outline" onclick="marquerTousPartis()" style="padding: 6px 12px; font-size: 12px;">✈️ Marquer tous partis</button>
-            <button class="btn btn-outline" onclick="exportToExcel()" style="padding: 6px 12px; font-size: 12px;">📊 Exporter</button>
-            <button class="btn btn-outline" onclick="actualiser()" style="padding: 6px 12px; font-size: 12px;">🔄 Actualiser</button>
+            <button class="btn btn-outline" onclick="exportToExcel()" style="padding: 6px 12px; font-size: 12px;">📊 Exporter Excel</button>
+            <button class="btn btn-outline" onclick="chargerColis()" style="padding: 6px 12px; font-size: 12px;">🔄 Actualiser</button>
         </div>
         
-        <!-- LISTE DES COLIS -->
+        <!-- TABLEAU -->
         <div class="table-wrapper">
             <table class="colis-table">
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Type</th>
                         <th>Expéditeur</th>
                         <th>Destinataire</th>
-                        <th>Type</th>
+                        <th>Type colis</th>
                         <th>Prix (€)</th>
                         <th>Statut</th>
+                        <th>Date création</th>
+                        <th>Date départ</th>
+                        <th>Date récupération</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="7" class="text-center">Chargement...</td></tr>
+                    <tr><td colspan="11" class="text-center">Chargement...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- MODAL PERSONNALISÉ POUR RÉCUPÉRATION -->
-<div id="modalRecuperation" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 24px; width: 90%; max-width: 400px; overflow: hidden;">
+<!-- MODAL RÉCUPÉRATION -->
+<div id="modalRecup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 24px; width: 90%; max-width: 400px;">
         <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-            <h3 style="margin: 0;">🏠 Confirmer la récupération</h3>
+            <h3>🏠 RÉCUPÉRATION</h3>
         </div>
         <div style="padding: 20px;">
-            <p>Qui a récupéré ce colis ?</p>
-            <input type="text" id="recupNom" placeholder="Nom de la personne" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px;">
-            <input type="tel" id="recupTel" placeholder="Téléphone" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <div class="form-group">
+                <label>💰 Montant payé (€)</label>
+                <input type="number" id="recupMontant" step="0.01" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:12px;">
+            </div>
+            <div class="form-group">
+                <label>👤 Récupéré par</label>
+                <input type="text" id="recupNom" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:12px;">
+            </div>
         </div>
         <div style="padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end;">
-            <button onclick="fermerModal()" class="btn btn-secondary" style="padding: 8px 16px;">Annuler</button>
-            <button onclick="confirmerRecuperation()" class="btn btn-primary" style="padding: 8px 16px;">Confirmer</button>
+            <button onclick="fermerModal()" class="btn btn-secondary">Annuler</button>
+            <button onclick="confirmerRecup()" class="btn btn-primary">Confirmer</button>
         </div>
     </div>
 </div>
@@ -91,109 +81,154 @@
         border-radius: 40px;
         font-size: 13px;
         cursor: pointer;
-        transition: all 0.2s;
     }
     .filter-btn.active {
         background: #e67e22;
         color: white;
     }
+    .type-badge-envoi {
+        background: #dbeafe;
+        color: #2563eb;
+        padding: 4px 10px;
+        border-radius: 40px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .type-badge-reception {
+        background: #fef3c7;
+        color: #d97706;
+        padding: 4px 10px;
+        border-radius: 40px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+    }
     .action-btn {
-        background: none;
+        background: #e67e22;
+        color: white;
         border: none;
-        cursor: pointer;
         padding: 6px 12px;
         border-radius: 8px;
         font-size: 12px;
-        transition: all 0.2s;
-    }
-    .action-btn.partir {
-        background: #dbeafe;
-        color: #2563eb;
-    }
-    .action-btn.recuperer {
-        background: #d1fae5;
-        color: #059669;
+        cursor: pointer;
     }
     .action-btn:hover {
-        transform: scale(1.02);
+        background: #d35400;
     }
+    .action-btn-disabled {
+        background: #94a3b8;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: not-allowed;
+        display: inline-block;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .status-En-attente { background: #fef3c7; color: #d97706; }
+    .status-Parti { background: #dbeafe; color: #2563eb; }
+    .status-Récupéré { background: #d1fae5; color: #059669; }
 </style>
 
 <script>
     let colisData = [];
-    let selectedColisId = null;
     let filtreActuel = 'all';
+    let colisSelectionne = null;
+    
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    }
     
     async function chargerColis() {
         const response = await fetch('/api/colis');
         colisData = await response.json();
-        mettreAJourStats();
-        afficherColis();
+        appliquerFiltreEtAfficher();
     }
     
-    function mettreAJourStats() {
-        const enAttente = colisData.filter(c => c.statut === 'En attente').length;
-        const parti = colisData.filter(c => c.statut === 'Parti').length;
-        const arrive = colisData.filter(c => c.statut === 'Arrivé').length;
-        const recupere = colisData.filter(c => c.statut === 'Récupéré').length;
-        
-        document.getElementById('statsEnAttente').textContent = enAttente;
-        document.getElementById('statsParti').textContent = parti;
-        document.getElementById('statsArrive').textContent = arrive;
-        document.getElementById('statsRecupere').textContent = recupere;
-    }
-    
-    function afficherColis() {
+    function appliquerFiltreEtAfficher() {
         let filtres = colisData;
-        if (filtreActuel !== 'all') {
+        
+        if (filtreActuel === 'envoi_france') {
+            filtres = colisData.filter(c => c.type_flux === 'envoi_france');
+        } else if (filtreActuel === 'reception_france') {
+            filtres = colisData.filter(c => c.type_flux === 'reception_france');
+        } else if (filtreActuel !== 'all') {
             filtres = colisData.filter(c => c.statut === filtreActuel);
         }
         
         const tbody = document.getElementById('tableBody');
+        
         if (filtres.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun colis trouvé</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center">Aucun colis trouvé</td></tr>';
             return;
         }
         
         tbody.innerHTML = filtres.map(c => {
-            let actionHtml = '';
-            
-            // Déterminer l'action selon le type de flux et le statut
+            // Type de flux
+            let typeHtml = '';
             if (c.type_flux === 'envoi_france') {
-                // Côte d'Ivoire → France : seulement "Parti"
-                if (c.statut === 'En attente') {
-                    actionHtml = `<button class="action-btn partir" onclick="marquerParti(${c.id})">✈️ Marquer Parti</button>`;
-                } else if (c.statut === 'Parti') {
-                    actionHtml = `<span style="color: #22c55e;">✓ Expédié</span>`;
-                } else {
-                    actionHtml = `<span style="color: #94a3b8;">Terminé</span>`;
-                }
+                typeHtml = '<span class="type-badge-envoi">📤 CI→FR</span>';
             } else {
-                // France → Côte d'Ivoire : seulement "Récupéré"
-                if (c.statut === 'En attente') {
-                    actionHtml = `<button class="action-btn recuperer" onclick="ouvrirModalRecuperation(${c.id})">🏠 Récupéré</button>`;
-                } else if (c.statut === 'Récupéré') {
-                    let info = '';
-                    if (c.recuperateur_nom) info = ` par ${c.recuperateur_nom}`;
-                    actionHtml = `<span style="color: #22c55e;">✓ Récupéré${info}</span>`;
-                } else {
-                    actionHtml = `<span style="color: #94a3b8;">${c.statut}</span>`;
-                }
+                typeHtml = '<span class="type-badge-reception">📥 FR→CI</span>';
             }
             
-            // Afficher l'expéditeur/déposant
+            // Expéditeur
             let expediteur = c.deposant_nom || c.livreur_nom || '-';
             
+            // Dates
+            const dateCreation = formatDate(c.date_creation);
+            
+            // Date départ (seulement pour les envois)
+            let dateDepart = '-';
+            if (c.type_flux === 'envoi_france') {
+                dateDepart = formatDate(c.date_expedition);
+            }
+            
+            // Date récupération (seulement pour les réceptions)
+            let dateRecuperation = '-';
+            if (c.type_flux === 'reception_france') {
+                dateRecuperation = formatDate(c.date_recuperation);
+            }
+            
+            // Action
+            let actionHtml = '';
+            if (c.type_flux === 'reception_france' && c.statut === 'En attente') {
+                actionHtml = `<button class="action-btn" onclick="ouvrirModalRecup(${c.id}, ${c.prix_final || 0})">🏠 Récupéré</button>`;
+            } else if (c.type_flux === 'envoi_france' && c.statut === 'En attente') {
+                actionHtml = `<button class="action-btn" onclick="marquerParti(${c.id})">✈️ Marquer Parti</button>`;
+            } else if (c.statut === 'Récupéré') {
+                actionHtml = `<span class="action-btn-disabled">✅ Récupéré${c.recuperateur_nom ? ' par ' + c.recuperateur_nom : ''}</span>`;
+            } else if (c.statut === 'Parti') {
+                actionHtml = `<span class="action-btn-disabled">✈️ Parti</span>`;
+            } else {
+                actionHtml = `<span class="action-btn-disabled">-</span>`;
+            }
+            
             return `
-            <tr>
-                <td><strong>#${c.id}</strong></td>
-                <td><small>${expediteur}<br>📞 ${c.deposant_telephone || '-'}</small></td>
-                <td><small>${c.destinataire_nom || '-'}<br>📞 ${c.destinataire_telephone || '-'}</small></td>
-                <td><small>${c.type_colis || '-'}</small></td>
-                <td><strong>${c.prix_final || c.montant_paye || 0} €</strong></td>
-                <td><span class="status-badge status-${c.statut?.replace(/ /g, '-') || 'En-attente'}">${c.statut || 'En attente'}</span></td>
-                <td>${actionHtml}</td>
-            </tr>`;
+                <tr>
+                    <td><strong>#${c.id}</strong></td>
+                    <td>${typeHtml}</td>
+                    <td><small>${expediteur}</small></td>
+                    <td><small>${c.destinataire_nom || '-'}<br>📞 ${c.destinataire_telephone || '-'}</small></td>
+                    <td><small>${c.type_colis || '-'}</small></td>
+                    <td><strong>${c.prix_final || c.montant_paye || 0} €</strong></td>
+                    <td><span class="status-badge status-${c.statut?.replace(/ /g, '-') || 'En-attente'}">${c.statut || 'En attente'}</span></td>
+                    <td><small>${dateCreation}</small></td>
+                    <td><small>${dateDepart}</small></td>
+                    <td><small>${dateRecuperation}</small></td>
+                    <td>${actionHtml}</td>
+                </tr>
+            `;
         }).join('');
     }
     
@@ -208,64 +243,69 @@
         }
     }
     
-    function ouvrirModalRecuperation(id) {
-        selectedColisId = id;
+    function ouvrirModalRecup(id, montant) {
+        colisSelectionne = id;
+        document.getElementById('recupMontant').value = montant;
         document.getElementById('recupNom').value = '';
-        document.getElementById('recupTel').value = '';
-        document.getElementById('modalRecuperation').style.display = 'flex';
+        document.getElementById('modalRecup').style.display = 'flex';
     }
     
     function fermerModal() {
-        document.getElementById('modalRecuperation').style.display = 'none';
-        selectedColisId = null;
+        document.getElementById('modalRecup').style.display = 'none';
+        colisSelectionne = null;
     }
     
-    async function confirmerRecuperation() {
+    async function confirmerRecup() {
+        const montant = parseFloat(document.getElementById('recupMontant').value);
         const nom = document.getElementById('recupNom').value;
-        const tel = document.getElementById('recupTel').value;
         
-        if (!nom) {
-            alert('Veuillez entrer le nom de la personne qui récupère');
+        if (isNaN(montant) || montant <= 0) {
+            alert('Veuillez entrer le montant payé');
             return;
         }
         
-        const response = await fetch(`/api/colis/${selectedColisId}/statut`, {
+        const response = await fetch(`/api/colis/${colisSelectionne}/statut`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 statut: 'Récupéré',
-                recuperateur_nom: nom,
-                recuperateur_telephone: tel
+                montant_paye: montant,
+                recuperateur_nom: nom
             })
         });
         
         if (response.ok) {
             fermerModal();
             chargerColis();
+        } else {
+            alert('Erreur lors de la mise à jour');
         }
     }
     
-    async function marquerTousPartis() {
-        const enAttente = colisData.filter(c => c.type_flux === 'envoi_france' && c.statut === 'En attente');
-        if (enAttente.length === 0) {
-            alert('Aucun colis en attente pour la Côte d\'Ivoire → France');
-            return;
-        }
-        
-        if (confirm(`Marquer les ${enAttente.length} colis comme "Parti" ?`)) {
-            for (const colis of enAttente) {
-                await fetch(`/api/colis/${colis.id}`, {
-                    method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({statut: 'Parti'})
-                });
-            }
-            chargerColis();
-        }
-    }
-    
-    function actualiser() {
-        chargerColis();
+    function exportToExcel() {
+        let csv = "ID;Type;Expéditeur;Destinataire;Tél Destinataire;Type Colis;Prix;Statut;Date création;Date départ;Date récupération;Notes\n";
+        colisData.forEach(c => {
+            let dateDepart = (c.type_flux === 'envoi_france') ? formatDate(c.date_expedition) : '';
+            let dateRecuperation = (c.type_flux === 'reception_france') ? formatDate(c.date_recuperation) : '';
+            
+            csv += `${c.id};`;
+            csv += `${c.type_flux === 'envoi_france' ? 'CI→FR' : 'FR→CI'};`;
+            csv += `${c.deposant_nom || c.livreur_nom || '-'};`;
+            csv += `${c.destinataire_nom || '-'};`;
+            csv += `${c.destinataire_telephone || '-'};`;
+            csv += `${c.type_colis || '-'};`;
+            csv += `${c.prix_final || c.montant_paye || 0};`;
+            csv += `${c.statut};`;
+            csv += `${formatDate(c.date_creation)};`;
+            csv += `${dateDepart};`;
+            csv += `${dateRecuperation};`;
+            csv += `${c.notes || ''}\n`;
+        });
+        const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `colis_export_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
     }
     
     // Filtres
@@ -274,31 +314,9 @@
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filtreActuel = this.dataset.filter;
-            afficherColis();
+            appliquerFiltreEtAfficher();
         });
     });
-    
-    function exportToExcel() {
-        let csv = "ID;Type;Expéditeur;Tél Exp;Destinataire;Tél Dest;Type Colis;Prix;Payement;Statut;Date\n";
-        colisData.forEach(c => {
-            csv += `${c.id};`;
-            csv += `${c.type_flux === 'envoi_france' ? 'CI→FR' : 'FR→CI'};`;
-            csv += `${c.deposant_nom || '-'};`;
-            csv += `${c.deposant_telephone || '-'};`;
-            csv += `${c.destinataire_nom || '-'};`;
-            csv += `${c.destinataire_telephone || '-'};`;
-            csv += `${c.type_colis || '-'};`;
-            csv += `${c.prix_final || c.montant_paye || 0};`;
-            csv += `${c.moyen_payement || '-'};`;
-            csv += `${c.statut};`;
-            csv += `${c.date_creation}\n`;
-        });
-        const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv'});
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `colis_export_${new Date().toISOString().slice(0,10)}.csv`;
-        link.click();
-    }
     
     chargerColis();
 </script>

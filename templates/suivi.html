@@ -1,144 +1,316 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="card">
+<div class="glass-card">
     <div class="card-header">
-        <h2>🔍 SUIVI DES COLIS</h2>
+        <h2>🔍 SUIVI CLIENT</h2>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Recherchez un colis par numéro de téléphone ou par nom</p>
     </div>
     <div class="card-body">
         
+        <!-- Barre de recherche -->
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Rechercher par téléphone du destinataire ou nom du déposant..." autocomplete="off">
-            <button class="btn btn-primary" onclick="rechercher()">🔍 RECHERCHER</button>
+            <input type="text" id="searchInput" placeholder="Rechercher par téléphone (ex: 0605727358) ou par nom" style="flex: 1; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 16px;">
+            <button class="btn btn-primary" onclick="rechercher()" style="padding: 14px 24px;">🔍 RECHERCHER</button>
         </div>
         
-        <div id="results"></div>
+        <div id="results" style="margin-top: 20px;"></div>
         
     </div>
 </div>
 
+<!-- MODAL RÉCUPÉRATION -->
+<div id="modalRecup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 24px; width: 90%; max-width: 400px;">
+        <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+            <h3>🏠 RÉCUPÉRATION DU COLIS</h3>
+        </div>
+        <div style="padding: 20px;">
+            <div id="modalInfo" style="background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 20px;"></div>
+            <div class="form-group">
+                <label>💰 Montant payé (€) *</label>
+                <input type="number" id="recupMontant" step="0.01" placeholder="0.00" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:12px;">
+            </div>
+            <div class="form-group">
+                <label>👤 Récupéré par</label>
+                <input type="text" id="recupNom" placeholder="Nom de la personne qui récupère" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:12px;">
+            </div>
+        </div>
+        <div style="padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="fermerModal()" class="btn btn-secondary">Annuler</button>
+            <button onclick="confirmerRecuperation()" class="btn btn-primary">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .result-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+    }
+    .result-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .result-id {
+        font-weight: 700;
+        color: #e67e22;
+        font-size: 15px;
+    }
+    .result-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        font-size: 13px;
+    }
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .detail-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+    .detail-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e293b;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 40px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .status-En-attente {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    .status-Récupéré {
+        background: #d1fae5;
+        color: #059669;
+    }
+    .status-Parti {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+    .alert {
+        padding: 14px 18px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+    .alert-warning {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #fde68a;
+    }
+    .alert-error {
+        background: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+    }
+    .btn-recuperer {
+        background: #e67e22;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 12px;
+    }
+    .btn-recuperer:hover {
+        background: #d35400;
+    }
+    .btn-recuperer:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+    }
+</style>
+
 <script>
+    let colisSelectionne = null;
+    
     async function rechercher() {
-        const terme = document.getElementById('searchInput').value;
+        const terme = document.getElementById('searchInput').value.trim();
         
         if (terme.length < 2) {
-            document.getElementById('results').innerHTML = '<div class="alert" style="background:#f0f2f2;">🔍 Veuillez entrer au moins 2 caractères</div>';
+            document.getElementById('results').innerHTML = '<div class="alert alert-warning">⚠️ Veuillez entrer au moins 2 caractères (téléphone ou nom)</div>';
             return;
         }
+        
+        console.log("Recherche du terme:", terme);
         
         try {
             const response = await fetch(`/api/recherche?q=${encodeURIComponent(terme)}`);
             const colis = await response.json();
             
+            console.log("Colis trouvés:", colis);
+            
             const resultsDiv = document.getElementById('results');
             
             if (colis.length === 0) {
-                resultsDiv.innerHTML = '<div class="alert alert-error">❌ Aucun colis trouvé</div>';
+                resultsDiv.innerHTML = `<div class="alert alert-error">❌ Aucun colis trouvé pour "${terme}"</div>`;
                 return;
             }
             
             resultsDiv.innerHTML = colis.map(c => {
-                // Déterminer l'expéditeur
-                let expediteur = '';
-                if (c.deposant_nom) {
-                    expediteur = `👤 Déposant: ${c.deposant_nom} (${c.deposant_telephone || '-'})`;
-                } else if (c.livreur_nom) {
-                    expediteur = `🚚 Transporteur: ${c.livreur_nom} (${c.livreur_telephone || '-'})`;
-                } else if (c.recuperateur_nom) {
-                    expediteur = `📥 Récupéré par: ${c.recuperateur_nom} (${c.recuperateur_telephone || '-'})`;
+                const dateCreation = c.date_creation ? new Date(c.date_creation).toLocaleString('fr-FR') : '-';
+                let dateAction = '-';
+                let statutHtml = '';
+                let boutonHtml = '';
+                
+                // Déterminer le type de flux
+                const typeTexte = c.type_flux === 'envoi_france' ? '📤 CI→FR' : '📥 FR→CI';
+                
+                if (c.type_flux === 'reception_france') {
+                    if (c.statut === 'Récupéré') {
+                        statutHtml = '<span class="status-badge status-Récupéré">✅ RÉCUPÉRÉ</span>';
+                        dateAction = c.date_recuperation ? new Date(c.date_recuperation).toLocaleString('fr-FR') : '-';
+                        boutonHtml = '<button class="btn-recuperer" disabled>🏠 Déjà récupéré</button>';
+                    } else {
+                        statutHtml = '<span class="status-badge status-En-attente">⏳ EN ATTENTE</span>';
+                        boutonHtml = `<button class="btn-recuperer" onclick="ouvrirModalRecup(${c.id}, ${c.prix_final || c.montant_paye || 0}, '${c.destinataire_nom || ''}', '${c.destinataire_telephone || ''}')">🏠 MARQUER RÉCUPÉRÉ</button>`;
+                    }
                 } else {
-                    expediteur = '-';
+                    if (c.statut === 'Parti') {
+                        statutHtml = '<span class="status-badge status-Parti">✈️ PARTI</span>';
+                        dateAction = c.date_expedition ? new Date(c.date_expedition).toLocaleString('fr-FR') : '-';
+                        boutonHtml = '<button class="btn-recuperer" disabled>📤 Colis expédié</button>';
+                    } else {
+                        statutHtml = '<span class="status-badge status-En-attente">⏳ EN ATTENTE</span>';
+                        boutonHtml = '<button class="btn-recuperer" disabled>⏳ En attente d\'expédition</button>';
+                    }
                 }
                 
-                // Afficher le type de colis
-                let typeColis = c.type_colis || '-';
-                if (c.type_colis_autre) {
-                    typeColis += ` (${c.type_colis_autre})`;
-                }
-                
-                // Afficher les dates importantes
-                let dates = '';
-                if (c.date_validation) {
-                    dates += `<div class="result-detail-item"><span class="result-detail-label">✅ Validé:</span><span>${new Date(c.date_validation).toLocaleDateString('fr-FR')} ${new Date(c.date_validation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
-                }
-                if (c.date_expedition) {
-                    dates += `<div class="result-detail-item"><span class="result-detail-label">✈️ Expédié:</span><span>${new Date(c.date_expedition).toLocaleDateString('fr-FR')} ${new Date(c.date_expedition).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
-                }
-                if (c.date_reception) {
-                    dates += `<div class="result-detail-item"><span class="result-detail-label">📍 Arrivé:</span><span>${new Date(c.date_reception).toLocaleDateString('fr-FR')} ${new Date(c.date_reception).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
-                }
-                if (c.date_recuperation) {
-                    dates += `<div class="result-detail-item"><span class="result-detail-label">🏠 Récupéré:</span><span>${new Date(c.date_recuperation).toLocaleDateString('fr-FR')} ${new Date(c.date_recuperation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span></div>`;
-                }
+                // Afficher le téléphone s'il existe
+                const telDest = c.destinataire_telephone ? `📞 ${c.destinataire_telephone}` : '';
                 
                 return `
-                <div class="result-card">
-                    <div class="result-header">
-                        <span class="result-id">📦 COLIS #${c.id}</span>
-                        <span class="status-badge status-${c.statut.replace(/ /g, '-')}">${c.statut}</span>
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-id">📦 COLIS #${c.id} - ${typeTexte}</span>
+                            ${statutHtml}
+                        </div>
+                        <div class="result-details">
+                            <div class="detail-item">
+                                <span class="detail-label">DATE CRÉATION</span>
+                                <span class="detail-value">${dateCreation}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">DATE ${c.type_flux === 'reception_france' ? 'RÉCUPÉRATION' : 'DÉPART'}</span>
+                                <span class="detail-value">${dateAction}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">EXPÉDITEUR</span>
+                                <span class="detail-value">${c.deposant_nom || c.livreur_nom || '-'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">DESTINATAIRE</span>
+                                <span class="detail-value">${c.destinataire_nom || '-'} ${telDest ? '<br>' + telDest : ''}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">TYPE DE COLIS</span>
+                                <span class="detail-value">${c.type_colis || '-'} ${c.type_colis_autre ? '('+c.type_colis_autre+')' : ''}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">POIDS</span>
+                                <span class="detail-value">${c.poids ? c.poids + ' kg' : '-'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">MONTANT</span>
+                                <span class="detail-value"><strong style="color:#e67e22;">${c.prix_final || c.montant_paye || 0} €</strong></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">PAYEMENT</span>
+                                <span class="detail-value">${c.moyen_payement || '-'}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            ${boutonHtml}
+                        </div>
                     </div>
-                    <div class="result-details">
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">📅 Créé le:</span>
-                            <span>${new Date(c.date_creation).toLocaleDateString('fr-FR')} ${new Date(c.date_creation).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">👤 Expéditeur:</span>
-                            <span>${expediteur}</span>
-                        </div>
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">🎯 Destinataire:</span>
-                            <span>${c.destinataire_nom || '-'} (${c.destinataire_telephone || '-'})</span>
-                        </div>
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">📦 Type:</span>
-                            <span>${typeColis}</span>
-                        </div>
-                        ${c.nombre_colis && c.nombre_colis > 1 ? `<div class="result-detail-item">
-                            <span class="result-detail-label">🔢 Nombre:</span>
-                            <span>${c.nombre_colis}</span>
-                        </div>` : ''}
-                        ${c.poids ? `<div class="result-detail-item">
-                            <span class="result-detail-label">⚖️ Poids:</span>
-                            <span>${c.poids} kg (arrondi: ${c.poids_arrondi || '-'} kg)</span>
-                        </div>` : ''}
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">💰 Montant:</span>
-                            <span><strong>${c.prix_final || c.montant_paye || 0} €</strong> ${c.est_negocie ? '(négocié)' : ''}</span>
-                        </div>
-                        <div class="result-detail-item">
-                            <span class="result-detail-label">💳 Payement:</span>
-                            <span>${c.moyen_payement || '-'} ${c.payement_chez ? `(${c.payement_chez})` : ''}</span>
-                        </div>
-                        ${dates ? `<div class="result-detail-item" style="grid-column: 1/-1;">
-                            <span class="result-detail-label">📅 Suivi:</span>
-                            <div style="flex:1;">${dates}</div>
-                        </div>` : ''}
-                        ${c.notes ? `<div class="result-detail-item" style="grid-column: 1/-1;">
-                            <span class="result-detail-label">📝 Notes:</span>
-                            <span>${c.notes}</span>
-                        </div>` : ''}
-                    </div>
-                    <div style="margin-top: 15px; text-align: right; border-top: 1px solid #eee; padding-top: 12px;">
-                        <button class="btn btn-primary" onclick="imprimerRecu(${c.id})" style="padding: 8px 20px;">
-                            🖨️ IMPRIMER LE REÇU
-                        </button>
-                    </div>
-                </div>`;
+                `;
             }).join('');
             
         } catch (error) {
-            console.error('Erreur:', error);
+            console.error("Erreur de recherche:", error);
             document.getElementById('results').innerHTML = '<div class="alert alert-error">❌ Erreur lors de la recherche</div>';
         }
     }
     
-    function imprimerRecu(id) {
-        // Ouvrir la page du reçu dans un nouvel onglet
-        window.open(`/recu/${id}`, '_blank');
+    function ouvrirModalRecup(id, montant, destinataire, telephone) {
+        colisSelectionne = id;
+        document.getElementById('recupMontant').value = montant;
+        document.getElementById('recupNom').value = '';
+        document.getElementById('modalInfo').innerHTML = `
+            <div><strong>Colis #${id}</strong></div>
+            <div>Destinataire: ${destinataire || '-'}</div>
+            <div>Téléphone: ${telephone || '-'}</div>
+            <div>Montant à payer: <strong style="color:#e67e22;">${montant} €</strong></div>
+        `;
+        document.getElementById('modalRecup').style.display = 'flex';
     }
     
-    // Recherche avec la touche Entrée
+    function fermerModal() {
+        document.getElementById('modalRecup').style.display = 'none';
+        colisSelectionne = null;
+    }
+    
+    async function confirmerRecuperation() {
+        const montant = parseFloat(document.getElementById('recupMontant').value);
+        const nom = document.getElementById('recupNom').value;
+        
+        if (isNaN(montant) || montant <= 0) {
+            alert('Veuillez entrer le montant payé');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/colis/${colisSelectionne}/statut`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    statut: 'Récupéré',
+                    montant_paye: montant,
+                    recuperateur_nom: nom || null
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Colis marqué comme récupéré !');
+                fermerModal();
+                document.getElementById('searchInput').value = '';
+                document.getElementById('results').innerHTML = '';
+                rechercher();
+            } else {
+                alert('❌ Erreur: ' + (result.message || 'Problème lors de la mise à jour'));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('❌ Erreur lors de la communication avec le serveur');
+        }
+    }
+    
     document.getElementById('searchInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             rechercher();

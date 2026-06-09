@@ -18,7 +18,6 @@ def get_db():
     return conn
 
 def arrondi_superieur(poids):
-    """Arrondit TOUJOURS au supérieur : 1.01 → 2, 1.9 → 2, 2.0 → 2"""
     if poids <= 0:
         return 0
     return math.ceil(poids)
@@ -33,8 +32,10 @@ def init_db():
             type_flux TEXT NOT NULL,
             deposant_nom TEXT,
             deposant_telephone TEXT,
-            destinataire_nom TEXT NOT NULL,
-            destinataire_telephone TEXT NOT NULL,
+            livreur_nom TEXT,
+            livreur_telephone TEXT,
+            destinataire_nom TEXT,
+            destinataire_telephone TEXT,
             recuperateur_nom TEXT,
             recuperateur_telephone TEXT,
             type_colis TEXT,
@@ -47,6 +48,7 @@ def init_db():
             moyen_payement TEXT,
             payement_chez TEXT,
             est_livreur INTEGER DEFAULT 0,
+            est_negocie INTEGER DEFAULT 0,
             date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             date_validation TIMESTAMP,
             date_expedition TIMESTAMP,
@@ -58,7 +60,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("Base de données créée")
+    print("Base de données créée avec succès!")
 
 init_db()
 
@@ -97,35 +99,34 @@ def add_colis_post():
         type_flux = request.form.get('type_flux')
         est_livreur = request.form.get('est_livreur') == 'on'
         
+        # ===== RÉCEPTION (France → Côte d'Ivoire) =====
         if type_flux == 'reception_france':
-            # RÉCEPTION
-            recuperateur_nom = request.form.get('recuperateur_nom', '')
-            recuperateur_telephone = request.form.get('recuperateur_telephone', '')
-            montant_paye = float(request.form.get('montant_paye', 0))
-            type_colis = request.form.get('type_colis', '')
-            type_colis_autre = request.form.get('type_colis_autre') if type_colis == 'Autre' else None
             destinataire_nom = request.form.get('destinataire_nom', '')
             destinataire_telephone = request.form.get('destinataire_telephone', '')
-            moyen_payement = request.form.get('moyen_payement', '')
+            type_colis = request.form.get('type_colis', '')
+            type_colis_autre = request.form.get('type_colis_autre') if type_colis == 'Autre' else None
+            montant_paye = float(request.form.get('montant_paye', 0))
+            recuperateur_nom = request.form.get('recuperateur_nom', '')
             notes = request.form.get('notes', '')
             
             conn = get_db()
             conn.execute('''
-                INSERT INTO colis (type_flux, recuperateur_nom, recuperateur_telephone, montant_paye,
-                type_colis, type_colis_autre, destinataire_nom, destinataire_telephone,
-                moyen_payement, notes, statut, prix_final)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (type_flux, recuperateur_nom, recuperateur_telephone, montant_paye,
-                  type_colis, type_colis_autre, destinataire_nom, destinataire_telephone,
-                  moyen_payement, notes, 'Récupéré', montant_paye))
+                INSERT INTO colis (type_flux, destinataire_nom, destinataire_telephone,
+                type_colis, type_colis_autre, prix_final, montant_paye,
+                recuperateur_nom, notes, statut)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', ('reception_france', destinataire_nom, destinataire_telephone,
+                  type_colis, type_colis_autre, montant_paye, montant_paye,
+                  recuperateur_nom, notes, 'En attente'))
             conn.commit()
             conn.close()
-            return jsonify({'success': True, 'message': 'Colis ajouté'})
+            print("Colis réception enregistré avec succès")
+            return jsonify({'success': True, 'message': 'Colis réception enregistré (en attente)'})
         
+        # ===== ENVOI (Côte d'Ivoire → France) =====
         else:
-            # ENVOI
             if est_livreur:
-                # Mode LIVREUR
+                # Mode TRANSPORTEUR
                 destinataire_nom = request.form.get('destinataire_nom', '')
                 destinataire_telephone = request.form.get('destinataire_telephone', '')
                 type_colis = request.form.get('type_colis', '')
@@ -138,12 +139,13 @@ def add_colis_post():
                 conn = get_db()
                 conn.execute('''
                     INSERT INTO colis (type_flux, est_livreur, destinataire_nom, destinataire_telephone,
-                    type_colis, type_colis_autre, prix_final, moyen_payement, payement_chez, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (type_flux, 1, destinataire_nom, destinataire_telephone,
-                      type_colis, type_colis_autre, prix_negocie, moyen_payement, payement_chez, notes))
+                    type_colis, type_colis_autre, prix_final, moyen_payement, payement_chez, notes, statut)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ('envoi_france', 1, destinataire_nom, destinataire_telephone,
+                      type_colis, type_colis_autre, prix_negocie, moyen_payement, payement_chez, notes, 'En attente'))
                 conn.commit()
                 conn.close()
+                print("Colis transporteur enregistré")
                 return jsonify({'success': True, 'message': 'Colis transporteur ajouté'})
             
             else:
@@ -161,25 +163,34 @@ def add_colis_post():
                 est_negocie = request.form.get('est_negocie') == 'on'
                 notes = request.form.get('notes', '')
                 
-                if est_negocie:
-                    prix_final = float(request.form.get('prix_negocie', 0))
+                types_sans_poids = ['Document', 'Perruque', 'Maillot']
+                
+                if type_colis in types_sans_poids:
+                    if est_negocie:
+                        prix_final = float(request.form.get('prix_negocie', 0))
+                    else:
+                        prix_final = 0
+                    poids_arrondi = None
                 else:
-                    # ARRONDI SUPÉRIEUR : 1.01kg → 2kg, 2.0kg → 2kg
-                    poids_arrondi = arrondi_superieur(poids)
-                    prix_final = poids_arrondi * PRIX_PAR_KG
+                    if est_negocie:
+                        prix_final = float(request.form.get('prix_negocie', 0))
+                    else:
+                        poids_arrondi = arrondi_superieur(poids)
+                        prix_final = poids_arrondi * PRIX_PAR_KG
                 
                 conn = get_db()
                 conn.execute('''
                     INSERT INTO colis (type_flux, deposant_nom, deposant_telephone,
                     destinataire_nom, destinataire_telephone, type_colis, type_colis_autre,
-                    nombre_colis, poids, poids_arrondi, prix_final, moyen_payement, payement_chez, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (type_flux, deposant_nom, deposant_telephone, destinataire_nom,
+                    nombre_colis, poids, poids_arrondi, prix_final, moyen_payement, payement_chez, est_negocie, notes, statut)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ('envoi_france', deposant_nom, deposant_telephone, destinataire_nom,
                       destinataire_telephone, type_colis, type_colis_autre, nombre_colis,
-                      poids, arrondi_superieur(poids) if poids > 0 else None, prix_final, 
-                      moyen_payement, payement_chez, notes))
+                      poids, poids_arrondi if 'poids_arrondi' in locals() else None, prix_final,
+                      moyen_payement, payement_chez, 1 if est_negocie else 0, notes, 'En attente'))
                 conn.commit()
                 conn.close()
+                print("Colis déposant enregistré")
                 return jsonify({'success': True, 'message': 'Colis ajouté'})
                 
     except Exception as e:
@@ -201,6 +212,11 @@ def list_colis():
 def suivi():
     return render_template('suivi.html')
 
+@app.route('/recuperation')
+@login_required
+def recuperation():
+    return render_template('recuperation.html')
+
 @app.route('/recu/<int:id>')
 def recu(id):
     conn = get_db()
@@ -215,6 +231,14 @@ def api_get_colis():
     colis = conn.execute('SELECT * FROM colis ORDER BY date_creation DESC').fetchall()
     conn.close()
     return jsonify([dict(row) for row in colis])
+
+@app.route('/api/colis/<int:id>')
+@login_required
+def api_get_colis_by_id(id):
+    conn = get_db()
+    colis = conn.execute('SELECT * FROM colis WHERE id = ?', (id,)).fetchone()
+    conn.close()
+    return jsonify(dict(colis) if colis else {})
 
 @app.route('/api/colis/<int:id>', methods=['PUT'])
 @login_required
@@ -246,29 +270,57 @@ def api_delete_colis(id):
     conn.commit()
     conn.close()
     return jsonify({'success': True})
+
 @app.route('/api/colis/<int:id>/statut', methods=['POST'])
 @login_required
-def api_update_statut(id):
+def api_update_statut_complet(id):
     data = request.json
     nouveau_statut = data.get('statut')
+    montant_paye = data.get('montant_paye')
     recuperateur_nom = data.get('recuperateur_nom')
-    recuperateur_telephone = data.get('recuperateur_telephone')
     
     conn = get_db()
     now = datetime.now().isoformat()
     
-    if nouveau_statut == 'Parti':
-        conn.execute('UPDATE colis SET statut=?, date_expedition=? WHERE id=?', 
-                    (nouveau_statut, now, id))
-    elif nouveau_statut == 'Récupéré':
-        conn.execute('UPDATE colis SET statut=?, date_recuperation=?, recuperateur_nom=?, recuperateur_telephone=? WHERE id=?',
-                    (nouveau_statut, now, recuperateur_nom, recuperateur_telephone, id))
-    else:
-        conn.execute('UPDATE colis SET statut=? WHERE id=?', (nouveau_statut, id))
+    if nouveau_statut == 'Récupéré':
+        conn.execute('''
+            UPDATE colis 
+            SET statut = ?, date_recuperation = ?, 
+                montant_paye = ?, prix_final = ?, 
+                recuperateur_nom = ?
+            WHERE id = ?
+        ''', (nouveau_statut, now, montant_paye, montant_paye, recuperateur_nom, id))
     
     conn.commit()
     conn.close()
     return jsonify({'success': True})
+
+@app.route('/api/colis/arrivants/en-attente')
+@login_required
+def api_colis_arrivants_en_attente():
+    conn = get_db()
+    colis = conn.execute('''
+        SELECT * FROM colis 
+        WHERE type_flux = 'reception_france' AND (statut = 'En attente' OR statut IS NULL)
+        ORDER BY date_creation DESC
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in colis])
+
+@app.route('/api/colis/arrivants/recherche')
+@login_required
+def api_colis_arrivants_recherche():
+    terme = request.args.get('q', '').lower()
+    conn = get_db()
+    colis = conn.execute('''
+        SELECT * FROM colis 
+        WHERE type_flux = 'reception_france' 
+        AND (LOWER(destinataire_telephone) LIKE ? OR LOWER(destinataire_nom) LIKE ?)
+        ORDER BY date_creation DESC
+    ''', (f'%{terme}%', f'%{terme}%')).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in colis])
+
 @app.route('/api/stats')
 @login_required
 def api_get_stats():

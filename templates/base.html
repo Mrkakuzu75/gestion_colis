@@ -14,15 +14,16 @@
                 📦 Colis<span>Express</span>
             </a>
             <div class="nav-links">
-                <a href="/">Accueil</a>
-                <a href="/add">Nouveau colis</a>
+                <a href="/">🏠 Accueil</a>
+                <a href="/add">➕ Nouveau colis</a>
                 {% if session.logged_in %}
-                <a href="/list">Liste</a>
-                <a href="/logout">Déconnexion</a>
+                <a href="/list">📋 Liste des colis</a>
+                <a href="/recuperation">🏠 Récupération</a>
+                <a href="/logout">🔓 Déconnexion</a>
                 {% else %}
-                <a href="/login">Admin</a>
+                <a href="/login">🔐 Administration</a>
                 {% endif %}
-                <a href="/suivi">Suivi</a>
+                <a href="/suivi">🔍 Suivi client</a>
             </div>
         </div>
     </nav>
