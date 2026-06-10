@@ -4,17 +4,17 @@
 <div class="glass-card">
     <div class="card-header">
         <h2>🏠 RÉCUPÉRATION DE COLIS</h2>
-        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Recherchez et gérez les colis arrivant de France</p>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Recherchez et gérez les colis en attente de récupération</p>
     </div>
     <div class="card-body">
         
         <!-- Barre de recherche -->
         <div class="search-container">
             <input type="tel" id="searchPhone" placeholder="Entrez le numéro de téléphone du destinataire" style="flex: 1; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 16px;">
-            <button class="btn btn-primary" onclick="rechercherColisArrivant()" style="padding: 14px 24px;">🔍 RECHERCHER</button>
+            <button class="btn btn-primary" onclick="rechercherColis()" style="padding: 14px 24px;">🔍 RECHERCHER</button>
         </div>
         
-        <!-- Liste des colis arrivants en attente -->
+        <!-- Liste des colis en attente -->
         <div style="margin-top: 30px;">
             <h3 style="font-size: 16px; margin-bottom: 15px;">📦 Colis en attente de récupération</h3>
             <div id="listeAttente"></div>
@@ -64,6 +64,10 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
+        transition: all 0.2s;
+    }
+    .colis-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .colis-info {
         flex: 2;
@@ -85,9 +89,11 @@
         font-size: 13px;
         font-weight: 500;
         cursor: pointer;
+        transition: all 0.2s;
     }
     .btn-recuperer:hover {
         background: #d35400;
+        transform: scale(1.02);
     }
     .badge-attente {
         background: #fef3c7;
@@ -96,6 +102,24 @@
         border-radius: 40px;
         font-size: 12px;
         font-weight: 500;
+        display: inline-block;
+        margin-right: 10px;
+    }
+    .type-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 8px;
+    }
+    .type-envoi {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+    .type-reception {
+        background: #fef3c7;
+        color: #d97706;
     }
 </style>
 
@@ -113,65 +137,78 @@
             return;
         }
         
-        div.innerHTML = colis.map(c => `
-            <div class="colis-item">
-                <div class="colis-info">
-                    <strong>#${c.id}</strong> - ${c.destinataire_nom || '-'}<br>
-                    <span>📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || 0} €</span>
-                </div>
-                <div>
-                    <span class="badge-attente">⏳ En attente</span>
-                    <button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || 0})">🏠 Récupéré</button>
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    async function rechercherColisArrivant() {
-        const phone = document.getElementById('searchPhone').value.trim();
-        
-        if (phone.length < 6) {
-            alert('Entrez au moins 6 chiffres');
-            return;
-        }
-        
-        const phoneClean = phone.replace(/[\s\.\-]/g, '');
-        const response = await fetch(`/api/colis/arrivants/recherche?q=${encodeURIComponent(phoneClean)}`);
-        const colis = await response.json();
-        
-        const div = document.getElementById('resultatsRecherche');
-        
-        if (colis.length === 0) {
-            div.innerHTML = '<div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 16px;">❌ Aucun colis trouvé pour ce numéro</div>';
-            return;
-        }
-        
         div.innerHTML = colis.map(c => {
-            let statutHtml = '';
-            let boutonHtml = '';
-            
-            if (c.statut === 'Récupéré') {
-                const dateRecup = c.date_recuperation ? new Date(c.date_recuperation).toLocaleString('fr-FR') : '-';
-                statutHtml = '<span style="background:#d1fae5; color:#059669; padding:4px 12px; border-radius:40px;">✅ Récupéré le ' + dateRecup + '</span>';
-                boutonHtml = '<button disabled style="opacity:0.5; background:#94a3b8; padding:8px 20px; border-radius:40px;">Déjà récupéré</button>';
-            } else {
-                statutHtml = '<span class="badge-attente">⏳ En attente</span>';
-                boutonHtml = `<button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || 0})">🏠 Marquer récupéré</button>`;
-            }
-            
+            const typeTexte = c.type_flux === 'envoi_france' ? '📤 Envoi (CI→FR)' : '📥 Réception (FR→CI)';
+            const typeClass = c.type_flux === 'envoi_france' ? 'type-envoi' : 'type-reception';
             return `
-                <div class="colis-item" style="margin-top: 15px;">
+                <div class="colis-item">
                     <div class="colis-info">
                         <strong>#${c.id}</strong> - ${c.destinataire_nom || '-'}<br>
-                        <span>📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || 0} €</span>
+                        <span>${typeTexte} | 📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || c.montant_paye || 0} €</span>
                     </div>
                     <div>
-                        ${statutHtml}
-                        ${boutonHtml}
+                        <span class="badge-attente">⏳ En attente</span>
+                        <button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || c.montant_paye || 0})">🏠 Récupéré</button>
                     </div>
                 </div>
             `;
         }).join('');
+    }
+    
+    async function rechercherColis() {
+        const phone = document.getElementById('searchPhone').value.trim();
+        
+        if (phone.length < 4) {
+            document.getElementById('resultatsRecherche').innerHTML = '<div style="padding: 20px; text-align: center; background: #fef3c7; border-radius: 16px;">⚠️ Veuillez entrer au moins 4 chiffres</div>';
+            return;
+        }
+        
+        // Nettoyer le numéro (garder uniquement les chiffres)
+        const phoneClean = phone.replace(/[\s\.\-+]/g, '');
+        
+        console.log("Recherche du numéro nettoyé:", phoneClean);
+        
+        try {
+            // Utiliser l'API de recherche générale
+            const response = await fetch(`/api/recherche?q=${encodeURIComponent(phoneClean)}`);
+            const colis = await response.json();
+            
+            console.log("Colis trouvés:", colis);
+            
+            const div = document.getElementById('resultatsRecherche');
+            
+            // Filtrer uniquement les colis en attente
+            const enAttente = colis.filter(c => c.statut === 'En attente');
+            
+            if (enAttente.length === 0) {
+                div.innerHTML = `<div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 16px;">❌ Aucun colis en attente trouvé pour le numéro ${phone}</div>`;
+                return;
+            }
+            
+            div.innerHTML = enAttente.map(c => {
+                const typeTexte = c.type_flux === 'envoi_france' ? '📤 Envoi (CI→FR)' : '📥 Réception (FR→CI)';
+                const typeClass = c.type_flux === 'envoi_france' ? 'type-envoi' : 'type-reception';
+                return `
+                    <div class="colis-item" style="margin-top: 15px;">
+                        <div class="colis-info">
+                            <strong>#${c.id}</strong> - ${c.destinataire_nom || '-'}<br>
+                            <span>${typeTexte} | 📞 ${c.destinataire_telephone || '-'} | 📦 ${c.type_colis || '-'} | 💰 ${c.prix_final || c.montant_paye || 0} €</span>
+                        </div>
+                        <div>
+                            <span class="badge-attente">⏳ En attente</span>
+                            <button class="btn-recuperer" onclick="ouvrirModal(${c.id}, ${c.prix_final || c.montant_paye || 0})">🏠 Marquer récupéré</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Rafraîchir la liste des colis en attente
+            chargerColisEnAttente();
+            
+        } catch (error) {
+            console.error("Erreur de recherche:", error);
+            document.getElementById('resultatsRecherche').innerHTML = '<div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 16px;">❌ Erreur lors de la recherche</div>';
+        }
     }
     
     function ouvrirModal(id, montant) {
@@ -180,6 +217,7 @@
         document.getElementById('recupNom').value = '';
         document.getElementById('modalRecup').style.display = 'flex';
         
+        // Récupérer les infos du colis pour les afficher dans le modal
         fetch(`/api/colis/${id}`)
             .then(r => r.json())
             .then(c => {
@@ -187,7 +225,8 @@
                     <div><strong>Colis #${c.id}</strong></div>
                     <div>Destinataire: ${c.destinataire_nom || '-'}</div>
                     <div>Téléphone: ${c.destinataire_telephone || '-'}</div>
-                    <div>Montant à payer: <strong style="color:#e67e22;">${c.prix_final || 0} €</strong></div>
+                    <div>Type: ${c.type_colis || '-'}</div>
+                    <div>Montant à payer: <strong style="color:#e67e22;">${montant} €</strong></div>
                 `;
             });
     }
@@ -199,38 +238,49 @@
     
     async function confirmerRecuperation() {
         const montant = parseFloat(document.getElementById('recupMontant').value);
-        const recupNom = document.getElementById('recupNom').value;
+        const nom = document.getElementById('recupNom').value;
         
         if (isNaN(montant) || montant <= 0) {
             alert('Veuillez entrer le montant payé');
             return;
         }
         
-        const response = await fetch(`/api/colis/${colisSelectionne}/statut`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                statut: 'Récupéré',
-                montant_paye: montant,
-                recuperateur_nom: recupNom || null
-            })
-        });
-        
-        if (response.ok) {
-            alert('✅ Colis marqué comme récupéré !');
-            fermerModal();
-            document.getElementById('searchPhone').value = '';
-            document.getElementById('resultatsRecherche').innerHTML = '';
-            chargerColisEnAttente();
-        } else {
-            alert('❌ Erreur');
+        try {
+            const response = await fetch(`/api/colis/${colisSelectionne}/statut`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    statut: 'Récupéré',
+                    montant_paye: montant,
+                    recuperateur_nom: nom || null
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Colis marqué comme récupéré !');
+                fermerModal();
+                document.getElementById('searchPhone').value = '';
+                document.getElementById('resultatsRecherche').innerHTML = '';
+                chargerColisEnAttente();
+            } else {
+                alert('❌ Erreur: ' + (result.message || 'Problème lors de la mise à jour'));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('❌ Erreur lors de la communication avec le serveur');
         }
     }
     
+    // Recherche avec la touche Entrée
     document.getElementById('searchPhone').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') rechercherColisArrivant();
+        if (e.key === 'Enter') {
+            rechercherColis();
+        }
     });
     
+    // Chargement initial
     chargerColisEnAttente();
 </script>
 {% endblock %}

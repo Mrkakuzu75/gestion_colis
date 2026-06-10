@@ -15,18 +15,19 @@ def sauvegarder_base():
     # Créer le dossier backups si inexistant
     if not os.path.exists(BACKUP_DIR):
         os.makedirs(BACKUP_DIR)
+        print(f"Dossier {BACKUP_DIR} créé")
     
-    # Nom du fichier de sauvegarde avec date
+    # Nom du fichier de sauvegarde avec date et heure
     date_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     backup_file = os.path.join(BACKUP_DIR, f'colis_backup_{date_str}.db')
     
     # Copier la base
     shutil.copy2(DATABASE, backup_file)
+    print(f"✅ Sauvegarde créée: {backup_file}")
     
     # Supprimer les sauvegardes de plus de 30 jours
     supprimer_anciennes_sauvegardes()
     
-    print(f"Sauvegarde créée: {backup_file}")
     return backup_file
 
 def supprimer_anciennes_sauvegardes(jours=30):
@@ -35,16 +36,17 @@ def supprimer_anciennes_sauvegardes(jours=30):
         return
     
     maintenant = datetime.now()
+    compteur = 0
     for fichier in os.listdir(BACKUP_DIR):
         chemin = os.path.join(BACKUP_DIR, fichier)
-        if os.path.isfile(chemin):
-            # Vérifier si le fichier est une sauvegarde
-            if fichier.startswith('colis_backup_') and fichier.endswith('.db'):
-                modif = datetime.fromtimestamp(os.path.getmtime(chemin))
-                difference = maintenant - modif
-                if difference.days > jours:
-                    os.remove(chemin)
-                    print(f"Ancienne sauvegarde supprimée: {fichier}")
+        if os.path.isfile(chemin) and fichier.startswith('colis_backup_') and fichier.endswith('.db'):
+            modif = datetime.fromtimestamp(os.path.getmtime(chemin))
+            if (maintenant - modif).days > jours:
+                os.remove(chemin)
+                compteur += 1
+    
+    if compteur > 0:
+        print(f"🗑️ {compteur} ancienne(s) sauvegarde(s) supprimée(s)")
 
 def lister_sauvegardes():
     """Retourne la liste des sauvegardes disponibles"""
@@ -64,6 +66,21 @@ def lister_sauvegardes():
                 'date': date_modif.strftime('%d/%m/%Y %H:%M:%S')
             })
     return sorted(backups, key=lambda x: x['date'], reverse=True)
+
+def restaurer_sauvegarde(nom_fichier):
+    """Restaure une sauvegarde"""
+    chemin_backup = os.path.join(BACKUP_DIR, nom_fichier)
+    if not os.path.exists(chemin_backup):
+        print(f"❌ Fichier {nom_fichier} non trouvé")
+        return False
+    
+    # Sauvegarder la base actuelle avant restauration
+    sauvegarder_base()
+    
+    # Restaurer
+    shutil.copy2(chemin_backup, DATABASE)
+    print(f"✅ Base restaurée depuis {nom_fichier}")
+    return True
 
 if __name__ == '__main__':
     sauvegarder_base()

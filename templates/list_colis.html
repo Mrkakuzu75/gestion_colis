@@ -33,17 +33,19 @@
                         <th>Type</th>
                         <th>Expéditeur</th>
                         <th>Destinataire</th>
+                        <th>Téléphone</th>
                         <th>Type colis</th>
+                        <th>Poids (kg)</th>
                         <th>Prix (€)</th>
                         <th>Statut</th>
                         <th>Date création</th>
                         <th>Date départ</th>
                         <th>Date récupération</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="11" class="text-center">Chargement...</td></tr>
+                    <tr><td colspan="13" class="text-center">Chargement...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -112,6 +114,7 @@
         border-radius: 8px;
         font-size: 12px;
         cursor: pointer;
+        margin-right: 5px;
     }
     .action-btn:hover {
         background: #d35400;
@@ -125,6 +128,18 @@
         font-size: 12px;
         cursor: not-allowed;
         display: inline-block;
+    }
+    .btn-pdf {
+        background: #dc2626;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .btn-pdf:hover {
+        background: #b91c1c;
     }
     .status-badge {
         display: inline-block;
@@ -169,7 +184,7 @@
         const tbody = document.getElementById('tableBody');
         
         if (filtres.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="text-center">Aucun colis trouvé</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" class="text-center">Aucun colis trouvé</td></tr>';
             return;
         }
         
@@ -187,23 +202,13 @@
             
             // Dates
             const dateCreation = formatDate(c.date_creation);
-            
-            // Date départ (seulement pour les envois)
-            let dateDepart = '-';
-            if (c.type_flux === 'envoi_france') {
-                dateDepart = formatDate(c.date_expedition);
-            }
-            
-            // Date récupération (seulement pour les réceptions)
-            let dateRecuperation = '-';
-            if (c.type_flux === 'reception_france') {
-                dateRecuperation = formatDate(c.date_recuperation);
-            }
+            const dateDepart = formatDate(c.date_expedition);
+            const dateRecup = formatDate(c.date_recuperation);
             
             // Action
             let actionHtml = '';
             if (c.type_flux === 'reception_france' && c.statut === 'En attente') {
-                actionHtml = `<button class="action-btn" onclick="ouvrirModalRecup(${c.id}, ${c.prix_final || 0})">🏠 Récupéré</button>`;
+                actionHtml = `<button class="action-btn" onclick="ouvrirModalRecup(${c.id}, ${c.prix_final || c.montant_paye || 0})">🏠 Récupéré</button>`;
             } else if (c.type_flux === 'envoi_france' && c.statut === 'En attente') {
                 actionHtml = `<button class="action-btn" onclick="marquerParti(${c.id})">✈️ Marquer Parti</button>`;
             } else if (c.statut === 'Récupéré') {
@@ -214,19 +219,24 @@
                 actionHtml = `<span class="action-btn-disabled">-</span>`;
             }
             
+            // Bouton PDF
+            const pdfBtn = `<button class="btn-pdf" onclick="imprimerPDF(${c.id})">📄 PDF</button>`;
+            
             return `
                 <tr>
                     <td><strong>#${c.id}</strong></td>
                     <td>${typeHtml}</td>
                     <td><small>${expediteur}</small></td>
-                    <td><small>${c.destinataire_nom || '-'}<br>📞 ${c.destinataire_telephone || '-'}</small></td>
-                    <td><small>${c.type_colis || '-'}</small></td>
+                    <td><small>${c.destinataire_nom || '-'}</small></td>
+                    <td><small>${c.destinataire_telephone || '-'}</small></td>
+                    <td><small>${c.type_colis || '-'} ${c.type_colis_autre ? '('+c.type_colis_autre+')' : ''}</small></td>
+                    <td><small>${c.poids ? c.poids + ' kg' : '-'}</small></td>
                     <td><strong>${c.prix_final || c.montant_paye || 0} €</strong></td>
                     <td><span class="status-badge status-${c.statut?.replace(/ /g, '-') || 'En-attente'}">${c.statut || 'En attente'}</span></td>
                     <td><small>${dateCreation}</small></td>
                     <td><small>${dateDepart}</small></td>
-                    <td><small>${dateRecuperation}</small></td>
-                    <td>${actionHtml}</td>
+                    <td><small>${dateRecup}</small></td>
+                    <td>${actionHtml} ${pdfBtn}</td>
                 </tr>
             `;
         }).join('');
@@ -278,27 +288,29 @@
             fermerModal();
             chargerColis();
         } else {
-            alert('Erreur lors de la mise à jour');
+            alert('Erreur');
         }
     }
     
+    function imprimerPDF(id) {
+        window.open(`/recu/${id}`, '_blank');
+    }
+    
     function exportToExcel() {
-        let csv = "ID;Type;Expéditeur;Destinataire;Tél Destinataire;Type Colis;Prix;Statut;Date création;Date départ;Date récupération;Notes\n";
+        let csv = "ID;Type;Expéditeur;Destinataire;Téléphone;Type Colis;Poids;Prix;Statut;Date création;Date départ;Date récupération;Notes\n";
         colisData.forEach(c => {
-            let dateDepart = (c.type_flux === 'envoi_france') ? formatDate(c.date_expedition) : '';
-            let dateRecuperation = (c.type_flux === 'reception_france') ? formatDate(c.date_recuperation) : '';
-            
             csv += `${c.id};`;
             csv += `${c.type_flux === 'envoi_france' ? 'CI→FR' : 'FR→CI'};`;
             csv += `${c.deposant_nom || c.livreur_nom || '-'};`;
             csv += `${c.destinataire_nom || '-'};`;
             csv += `${c.destinataire_telephone || '-'};`;
             csv += `${c.type_colis || '-'};`;
+            csv += `${c.poids || '-'};`;
             csv += `${c.prix_final || c.montant_paye || 0};`;
             csv += `${c.statut};`;
             csv += `${formatDate(c.date_creation)};`;
-            csv += `${dateDepart};`;
-            csv += `${dateRecuperation};`;
+            csv += `${formatDate(c.date_expedition)};`;
+            csv += `${formatDate(c.date_recuperation)};`;
             csv += `${c.notes || ''}\n`;
         });
         const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});

@@ -1,2 +1,4 @@
 Flask==2.3.3
 weasyprint==60.1
+qrcode[pil]
+Pillow

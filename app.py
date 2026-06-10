@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response
 from datetime import datetime
 import sqlite3
 import os
@@ -11,6 +11,14 @@ ADMIN_PASSWORD = 'admin123'
 DATABASE = 'colis.db'
 TAUX_CONVERSION = 655.96
 PRIX_PAR_KG = 10
+
+def generer_numero_suivi():
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) FROM colis").fetchone()[0]
+    conn.close()
+
+    date_str = datetime.now().strftime("%Y%m%d")
+    return f"CE-{date_str}-{str(total + 1).zfill(4)}"
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -60,7 +68,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("Base de données créée avec succès!")
+    print("Base de données prête")
 
 init_db()
 
@@ -120,36 +128,48 @@ def add_colis_post():
                   recuperateur_nom, notes, 'En attente'))
             conn.commit()
             conn.close()
-            print("Colis réception enregistré avec succès")
-            return jsonify({'success': True, 'message': 'Colis réception enregistré (en attente)'})
+            return jsonify({'success': True, 'message': 'Colis réception enregistré'})
         
         # ===== ENVOI (Côte d'Ivoire → France) =====
         else:
             if est_livreur:
-                # Mode TRANSPORTEUR
+                # MODE TRANSPORTEUR (LIVREUR)
+                print("=== MODE TRANSPORTEUR ===")
                 destinataire_nom = request.form.get('destinataire_nom', '')
                 destinataire_telephone = request.form.get('destinataire_telephone', '')
                 type_colis = request.form.get('type_colis', '')
                 type_colis_autre = request.form.get('type_colis_autre') if type_colis == 'Autre' else None
-                prix_negocie = float(request.form.get('prix_negocie', 0))
+                poids = float(request.form.get('poids', 0))
+                est_negocie = request.form.get('est_negocie') == 'on'
+                
+                if est_negocie:
+                    prix_final = float(request.form.get('prix_negocie', 0))
+                else:
+                    poids_arrondi = arrondi_superieur(poids)
+                    prix_final = poids_arrondi * PRIX_PAR_KG
+                
                 moyen_payement = request.form.get('moyen_payement', '')
                 payement_chez = request.form.get('payement_chez') if moyen_payement in ['Wave', 'Orange Money'] else None
                 notes = request.form.get('notes', '')
                 
                 conn = get_db()
                 conn.execute('''
-                    INSERT INTO colis (type_flux, est_livreur, destinataire_nom, destinataire_telephone,
-                    type_colis, type_colis_autre, prix_final, moyen_payement, payement_chez, notes, statut)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', ('envoi_france', 1, destinataire_nom, destinataire_telephone,
-                      type_colis, type_colis_autre, prix_negocie, moyen_payement, payement_chez, notes, 'En attente'))
+                    INSERT INTO colis (
+                        type_flux, est_livreur, livreur_nom, livreur_telephone,
+                        destinataire_nom, destinataire_telephone, type_colis, type_colis_autre,
+                        poids, prix_final, montant_paye, moyen_payement, payement_chez, notes, statut
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ('envoi_france', 1, 'Transporteur', '-', 
+                      destinataire_nom, destinataire_telephone,
+                      type_colis, type_colis_autre, poids, prix_final, prix_final,
+                      moyen_payement, payement_chez, notes, 'En attente'))
                 conn.commit()
                 conn.close()
-                print("Colis transporteur enregistré")
                 return jsonify({'success': True, 'message': 'Colis transporteur ajouté'})
             
             else:
-                # Mode DÉPOSANT
+                # MODE DÉPOSANT
+                print("=== MODE DÉPOSANT ===")
                 deposant_nom = request.form.get('deposant_nom', '')
                 deposant_telephone = request.form.get('deposant_telephone', '')
                 destinataire_nom = request.form.get('destinataire_nom', '')
@@ -182,15 +202,14 @@ def add_colis_post():
                 conn.execute('''
                     INSERT INTO colis (type_flux, deposant_nom, deposant_telephone,
                     destinataire_nom, destinataire_telephone, type_colis, type_colis_autre,
-                    nombre_colis, poids, poids_arrondi, prix_final, moyen_payement, payement_chez, est_negocie, notes, statut)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nombre_colis, poids, poids_arrondi, prix_final, montant_paye, moyen_payement, payement_chez, est_negocie, notes, statut)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', ('envoi_france', deposant_nom, deposant_telephone, destinataire_nom,
                       destinataire_telephone, type_colis, type_colis_autre, nombre_colis,
-                      poids, poids_arrondi if 'poids_arrondi' in locals() else None, prix_final,
+                      poids, poids_arrondi if 'poids_arrondi' in locals() else None, prix_final, prix_final,
                       moyen_payement, payement_chez, 1 if est_negocie else 0, notes, 'En attente'))
                 conn.commit()
                 conn.close()
-                print("Colis déposant enregistré")
                 return jsonify({'success': True, 'message': 'Colis ajouté'})
                 
     except Exception as e:
@@ -222,6 +241,8 @@ def recu(id):
     conn = get_db()
     colis = conn.execute('SELECT * FROM colis WHERE id = ?', (id,)).fetchone()
     conn.close()
+    if not colis:
+        return "Colis non trouvé", 404
     return render_template('recu_pdf.html', colis=dict(colis))
 
 @app.route('/api/colis')
@@ -301,7 +322,7 @@ def api_colis_arrivants_en_attente():
     conn = get_db()
     colis = conn.execute('''
         SELECT * FROM colis 
-        WHERE type_flux = 'reception_france' AND (statut = 'En attente' OR statut IS NULL)
+        WHERE (statut = 'En attente' OR statut IS NULL)
         ORDER BY date_creation DESC
     ''').fetchall()
     conn.close()
@@ -311,51 +332,117 @@ def api_colis_arrivants_en_attente():
 @login_required
 def api_colis_arrivants_recherche():
     terme = request.args.get('q', '').lower()
+    terme_chiffres = ''.join(filter(str.isdigit, terme))
+    
     conn = get_db()
+    
     colis = conn.execute('''
         SELECT * FROM colis 
-        WHERE type_flux = 'reception_france' 
-        AND (LOWER(destinataire_telephone) LIKE ? OR LOWER(destinataire_nom) LIKE ?)
+        WHERE (statut = 'En attente' OR statut IS NULL)
+        AND (
+            LOWER(destinataire_telephone) LIKE ? OR 
+            LOWER(destinataire_nom) LIKE ? OR
+            LOWER(recuperateur_telephone) LIKE ?
+        )
         ORDER BY date_creation DESC
-    ''', (f'%{terme}%', f'%{terme}%')).fetchall()
+    ''', (f'%{terme}%', f'%{terme}%', f'%{terme}%')).fetchall()
+    
+    if len(colis) == 0 and terme_chiffres:
+        colis = conn.execute('''
+            SELECT * FROM colis 
+            WHERE (statut = 'En attente' OR statut IS NULL)
+            AND (
+                REPLACE(REPLACE(REPLACE(destinataire_telephone, ' ', ''), '-', ''), '+', '') LIKE ? OR
+                REPLACE(REPLACE(REPLACE(recuperateur_telephone, ' ', ''), '-', ''), '+', '') LIKE ?
+            )
+            ORDER BY date_creation DESC
+        ''', (f'%{terme_chiffres}%', f'%{terme_chiffres}%')).fetchall()
+    
     conn.close()
     return jsonify([dict(row) for row in colis])
+
+@app.route('/api/recherche')
+def api_recherche():
+    terme = request.args.get('q', '').strip()
+    if len(terme) < 2:
+        return jsonify([])
+    
+    terme_chiffres = ''.join(filter(str.isdigit, terme))
+    
+    conn = get_db()
+    colis_list = conn.execute('SELECT * FROM colis ORDER BY date_creation DESC').fetchall()
+    
+    results = []
+    for colis in colis_list:
+        c = dict(colis)
+        tel_dest = ''.join(filter(str.isdigit, c.get('destinataire_telephone') or ''))
+        tel_dep = ''.join(filter(str.isdigit, c.get('deposant_telephone') or ''))
+        nom_dest = (c.get('destinataire_nom') or '').lower()
+        nom_dep = (c.get('deposant_nom') or '').lower()
+        
+        match = False
+        if terme_chiffres and (terme_chiffres in tel_dest or terme_chiffres in tel_dep):
+            match = True
+        elif len(terme) > 2 and (terme.lower() in nom_dest or terme.lower() in nom_dep):
+            match = True
+        
+        if match:
+            results.append(c)
+    
+    conn.close()
+    return jsonify(results)
 
 @app.route('/api/stats')
 @login_required
 def api_get_stats():
+    mois = request.args.get('mois', 'current')
+    
     conn = get_db()
+    
     total = conn.execute('SELECT COUNT(*) as c FROM colis').fetchone()['c']
-    encaisse = conn.execute('SELECT SUM(prix_final) as s FROM colis WHERE statut="Récupéré"').fetchone()['s'] or 0
-    en_attente = conn.execute('SELECT COUNT(*) as c FROM colis WHERE statut="En attente"').fetchone()['c']
-    ce_mois = conn.execute('SELECT COUNT(*) as c FROM colis WHERE strftime("%Y-%m", date_creation)=strftime("%Y-%m", "now")').fetchone()['c']
+    en_attente = conn.execute('SELECT COUNT(*) as c FROM colis WHERE statut = "En attente"').fetchone()['c']
+    
+    if mois == 'current':
+        encaisse = conn.execute('SELECT SUM(prix_final) as s FROM colis WHERE strftime("%Y-%m", date_creation) = strftime("%Y-%m", "now") AND prix_final > 0').fetchone()['s'] or 0
+        ce_mois = conn.execute('SELECT COUNT(*) as c FROM colis WHERE strftime("%Y-%m", date_creation) = strftime("%Y-%m", "now")').fetchone()['c']
+        nom_mois = datetime.now().strftime('%B %Y')
+    else:
+        encaisse = conn.execute('SELECT SUM(prix_final) as s FROM colis WHERE strftime("%Y-%m", date_creation) = ? AND prix_final > 0', (mois,)).fetchone()['s'] or 0
+        ce_mois = conn.execute('SELECT COUNT(*) as c FROM colis WHERE strftime("%Y-%m", date_creation) = ?', (mois,)).fetchone()['c']
+        date_obj = datetime.strptime(mois, '%Y-%m')
+        nom_mois = date_obj.strftime('%B %Y')
+    
     conn.close()
-    return jsonify({'total': total, 'encaisse': round(encaisse, 2), 'en_attente': en_attente, 'ce_mois': ce_mois})
+    
+    return jsonify({
+        'total': total,
+        'encaisse': round(encaisse, 2),
+        'en_attente': en_attente,
+        'ce_mois': ce_mois,
+        'nom_mois': nom_mois
+    })
 
-@app.route('/api/recherche')
-def api_recherche():
-    terme = request.args.get('q', '').lower()
-    if len(terme) < 2:
-        return jsonify([])
+@app.route('/api/mois-disponibles')
+@login_required
+def api_mois_disponibles():
     conn = get_db()
-    results = conn.execute('''
-        SELECT * FROM colis WHERE 
-        LOWER(destinataire_telephone) LIKE ? OR 
-        LOWER(deposant_nom) LIKE ? OR
-        LOWER(destinataire_nom) LIKE ?
-        ORDER BY date_creation DESC
-    ''', (f'%{terme}%', f'%{terme}%', f'%{terme}%')).fetchall()
+    mois = conn.execute('''
+        SELECT DISTINCT strftime("%Y-%m", date_creation) as mois 
+        FROM colis 
+        ORDER BY mois DESC
+    ''').fetchall()
     conn.close()
-    return jsonify([dict(row) for row in results])
-
-@app.route('/api/statuts-possibles/<statut>')
-def api_statuts_possibles(statut):
-    statuts = ['En attente', 'Validé', 'Parti', 'Arrivé', 'Récupéré']
-    try:
-        index = statuts.index(statut)
-        return jsonify(statuts[index+1:])
-    except:
-        return jsonify([])
+    
+    resultats = []
+    for m in mois:
+        if m['mois']:
+            date_obj = datetime.strptime(m['mois'], '%Y-%m')
+            resultats.append({
+                'value': m['mois'],
+                'label': date_obj.strftime('%B %Y')
+            })
+    
+    return jsonify(resultats)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

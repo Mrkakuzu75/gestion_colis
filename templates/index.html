@@ -9,6 +9,7 @@
     <div class="stat-card">
         <div class="stat-number" id="totalEncaisse">-</div>
         <div class="stat-label">CHIFFRE D'AFFAIRES (€)</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 5px;" id="moisEncaisse">ce mois</div>
     </div>
     <div class="stat-card">
         <div class="stat-number" id="enAttente">-</div>
@@ -20,18 +21,34 @@
     </div>
 </div>
 
+<!-- Sélecteur de mois pour voir les stats des mois passés -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-body" style="padding: 15px 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <span style="font-weight: 500; color: #334155;">📅 Période :</span>
+                <select id="moisSelect" style="padding: 8px 16px; border: 1.5px solid #e2e8f0; border-radius: 40px; font-size: 13px; background: white;">
+                    <option value="current">📆 Mois en cours</option>
+                </select>
+                <button class="btn btn-outline" onclick="changerMois()" style="padding: 6px 16px; font-size: 12px;">Voir</button>
+            </div>
+            <div id="infoPeriode" style="font-size: 12px; color: #64748b;"></div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
-        <h2>📦 SOLUTION D'EXPÉDITION FRANCE ↔ AFRIQUE</h2>
+        <h2>📦 SOLUTION D'EXPÉDITION COTE D'IVOIRE ↔ FRANCE</h2>
     </div>
     <div class="card-body">
-        <p style="margin-bottom: 20px; color: #666;">Gérez vos envois internationaux en toute simplicité. Suivi en temps réel, tarifs transparents.</p>
+        <p style="margin-bottom: 20px; color: #4a5568; line-height: 1.6;">Gérez vos envois internationaux en toute simplicité. Suivi en temps réel, tarifs transparents.</p>
         
         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <a href="/add" class="btn btn-primary">✈️ CRÉER UN ENVOI</a>
-            <a href="/suivi" class="btn btn-outline">🔍 SUIVI CLIENT</a>
+            <a href="/add" class="btn btn-primary" style="text-decoration: none;">✈️ CRÉER UN ENVOI</a>
+            <a href="/suivi" class="btn btn-outline" style="text-decoration: none;">🔍 SUIVI CLIENT</a>
             {% if not session.logged_in %}
-            <a href="/login" class="btn btn-secondary">🔐 ESPACE ADMIN</a>
+            <a href="/login" class="btn btn-secondary" style="text-decoration: none;">🔐 ESPACE ADMIN</a>
             {% endif %}
         </div>
     </div>
@@ -42,40 +59,78 @@
         <h2>📋 TARIFS & CONDITIONS</h2>
     </div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;">
+            
             <div>
-                <strong style="color:#e67e22;">💰 TARIF DE BASE</strong>
-                <p style="color: #666;">10€ / kg<br><small>Arrondi supérieur : 1,1kg = 2kg</small></p>
+                <div style="font-weight: 700; color: #e67e22; margin-bottom: 8px; font-size: 15px;">💰 TARIF DE BASE</div>
+                <p style="color: #4a5568; margin: 0;">10€ par kg</p>
+                <p style="color: #718096; font-size: 12px; margin-top: 4px;">Arrondi supérieur : 1,1 kg = 2 kg</p>
             </div>
+            
             <div>
-                <strong style="color:#e67e22;">💱 TAUX DE CHANGE</strong>
-                <p style="color: #666;">1€ = 655,96 FCFA</p>
+                <div style="font-weight: 700; color: #e67e22; margin-bottom: 8px; font-size: 15px;">💱 TAUX DE CHANGE</div>
+                <p style="color: #4a5568; margin: 0;">1 € = 655,96 FCFA</p>
             </div>
+            
             <div>
-                <strong style="color:#e67e22;">📊 SUIVI DES STATUTS</strong>
-                <p style="color: #666;">En attente → Validé → Parti → Arrivé → Récupéré</p>
+                <div style="font-weight: 700; color: #e67e22; margin-bottom: 8px; font-size: 15px;">📊 SUIVI DES STATUTS</div>
+                <p style="color: #4a5568; margin: 0;">En attente → Validé → Parti → Arrivé → Récupéré</p>
             </div>
+            
             <div>
-                <strong style="color:#e67e22;">💳 MOYENS DE PAYEMENT</strong>
-                <p style="color: #666;">Espèces / Wave / Orange Money / Ria / À l'arrivée</p>
+                <div style="font-weight: 700; color: #e67e22; margin-bottom: 8px; font-size: 15px;">💳 MOYENS DE PAIEMENT</div>
+                <p style="color: #4a5568; margin: 0;">Espèces / Wave / Orange Money / Ria Money Gram / Paiement à l'arrivée</p>
             </div>
+            
         </div>
     </div>
 </div>
 
 <script>
-    async function chargerStats() {
+    let moisList = [];
+    let moisActuel = 'current';
+    
+    async function chargerStats(mois = 'current') {
         {% if session.logged_in %}
         try {
-            const response = await fetch('/api/stats');
+            const response = await fetch('/api/stats?mois=' + mois);
             const stats = await response.json();
             document.getElementById('totalColis').textContent = stats.total;
             document.getElementById('totalEncaisse').textContent = stats.encaisse + ' €';
             document.getElementById('enAttente').textContent = stats.en_attente;
             document.getElementById('ceMois').textContent = stats.ce_mois;
-        } catch(e) {}
+            
+            if (stats.nom_mois) {
+                document.getElementById('moisEncaisse').textContent = stats.nom_mois;
+                document.getElementById('infoPeriode').innerHTML = `📊 Période : ${stats.nom_mois}`;
+            }
+        } catch(e) {
+            console.log('Erreur chargement stats:', e);
+        }
         {% endif %}
     }
-    chargerStats();
+    
+    async function chargerListeMois() {
+        const response = await fetch('/api/mois-disponibles');
+        moisList = await response.json();
+        
+        const select = document.getElementById('moisSelect');
+        select.innerHTML = '<option value="current">📆 Mois en cours</option>';
+        
+        moisList.forEach(mois => {
+            const option = document.createElement('option');
+            option.value = mois.value;
+            option.textContent = mois.label;
+            select.appendChild(option);
+        });
+    }
+    
+    function changerMois() {
+        moisActuel = document.getElementById('moisSelect').value;
+        chargerStats(moisActuel);
+    }
+    
+    chargerListeMois();
+    chargerStats('current');
 </script>
 {% endblock %}
